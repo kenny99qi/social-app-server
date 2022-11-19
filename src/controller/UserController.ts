@@ -89,6 +89,7 @@ export class UserController {
             return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrCreate))
         }
 
+        //whatever
         return res.status(StatusCode.E200).send(new Error("Registered successfully", StatusCode.E200, Message.OK))
     }
 
