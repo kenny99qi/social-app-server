@@ -1,16 +1,3 @@
-
-
-// export interface User {
-//     email: string;
-//     password: string;
-//     username: string;
-//     avatar: string;
-//     isStaff: boolean;
-//     isVerified: boolean;
-//     isActive: boolean;
-//     createdAt: Date;
-//     lastLogin: Date;
-// }
 const mongoose = require('mongoose')
 const uniqueValidator = require('mongoose-unique-validator')
 const Schema = mongoose.Schema
@@ -52,4 +39,4 @@ const UserSchema = new Schema({
 })
 UserSchema.plugin(uniqueValidator)
 
-module.exports = mongoose.model('User', UserSchema)
+module.exports = mongoose.model('User', UserSchema, 'user')
