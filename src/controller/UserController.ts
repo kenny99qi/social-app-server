@@ -76,7 +76,7 @@ export class UserController {
                 const {email, isStaff, id} = req.userWithJwt as JwtPayload
                 if(isStaff) {
                     try{
-                        users = await userModel.findOneAndUpdate({id: req.body.id},{
+                        users = await userModel.findOneAndUpdate({_id: req.body.id},{
                             "email": req.body.email,
                             "password": req.body.password,
                             "username": req.body.username,
@@ -85,12 +85,16 @@ export class UserController {
                             "isVerified": req.body.isVerified,
                             "isActive": req.body.isActive
                         });
-                        users = await userModel.findOne({id: req.body.id})
+                        users = await userModel.findOne({_id: req.body.id})
                     } catch (e) {
                         return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrUpdate))
                     }
                 }  else {
+                    if(req.body.isStaff || req.body.isVerified || req.body.isActive) {
+                        return res.status(StatusCode.E400).json(new Error(Message.NoPermit, StatusCode.E500, Message.NoPermit))
+                    }
                     try{
+                        console.log("id", id)
                         users = await userModel.findOneAndUpdate({_id: id},{
                             "email": req.body.email,
                             "password": req.body.password,
