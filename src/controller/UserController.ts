@@ -1,12 +1,8 @@
 import {Request, Response} from 'express'
-// import AppDataSource from "../data-source";
 import Error, {Message, StatusCode} from "../util/Error";
 import {CustomRequest, JwtPayload} from "../middleware/auth/AuthMiddleware";
-import getDb from "../data-source";
 import bcrypt from "bcrypt";
-import {ObjectId} from "mongodb";
 import jwt from "jsonwebtoken";
-// import {User} from "../entity/User";
 const userModel = require('../models/user')
 
 require('dotenv').config()
@@ -14,19 +10,24 @@ require('dotenv').config()
 const ttl = 60 * 5
 
 export class UserController {
-    static getAllUsers = async (req: Request, res: Response) => {
-        return res.status(200).json({
-            message: 'GET ALL USERS'
-        })
-    }
+    static getAllUsers = async (req: CustomRequest, res: Response) => {
+        let users: any
+        if(req.userWithJwt?.isStaff) {
+            try{
+                users = await userModel.find();
 
+            } catch (e) {
+                return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
+            }
+        } else{
+            return res.status(StatusCode.E400).json(new Error(Message.NoPermit, StatusCode.E500, Message.NoPermit))
+        }
+        return res.status(200).json(new Error(users, StatusCode.E200, Message.OK));
+    }
     // login user
     static loginUser = async (req: Request, res: Response) => {
         try{
-            const db = getDb();
-            const users = db.collection("user");
-
-            const user = await users.findOne({
+            const user = await userModel.findOne({
                 email: req.body.email,
             });
 
@@ -48,10 +49,16 @@ export class UserController {
                     message: "Email or password is incorrect",
                 });
             } else {
+                const id = user._id
                 // @ts-ignore
-                const accessToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+                const accessToken = jwt.sign({email: req.body.email, isStaff: user.isStaff, id}, process.env.JWT_SECRET, {expiresIn: '1d'});
+                let lastLogin = await userModel.findOneAndUpdate({email:req.body.email},{
+                    lastLogin: new Date()
+                })
+                lastLogin = await userModel.findOne({email:req.body.email})
                 return res.status(200).json({
                     accessToken: accessToken,
+                    lastLogin: lastLogin.lastLogin,
                     message: "Login successfully",
                 });
             }
@@ -61,7 +68,48 @@ export class UserController {
     }
 
     // refresh tokens: get a new access token and a new refresh token
-    static getNewTokens = async (req: Request, res: Response) => {
+    static updateUser = async (req: CustomRequest, res: Response) => {
+        // try{
+            // const {email, password, username, avatar, isStaff, isVerified, isActive } = req.body
+            let users: any
+            if(req.userWithJwt) {
+                const {email, isStaff, id} = req.userWithJwt as JwtPayload
+                if(isStaff) {
+                    try{
+                        users = await userModel.findOneAndUpdate({id: req.body.id},{
+                            "email": req.body.email,
+                            "password": req.body.password,
+                            "username": req.body.username,
+                            "avatar": req.body.avatar,
+                            "isStaff": req.body.isStaff,
+                            "isVerified": req.body.isVerified,
+                            "isActive": req.body.isActive
+                        });
+                        users = await userModel.findOne({id: req.body.id})
+                    } catch (e) {
+                        return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrUpdate))
+                    }
+                }  else {
+                    try{
+                        users = await userModel.findOneAndUpdate({_id: id},{
+                            "email": req.body.email,
+                            "password": req.body.password,
+                            "username": req.body.username,
+                            "avatar": req.body.avatar,
+                        });
+                        users = await userModel.findOne({_id: id})
+                    } catch (e) {
+                        return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrUpdate))
+                    }
+                }
+            } else{
+                return res.status(StatusCode.E400).json(new Error(Message.NoPermit, StatusCode.E500, Message.NoPermit))
+            }
+            return res.status(200).json(new Error(users, StatusCode.E200, Message.OK));
+        // } catch (e) {
+        //     return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrUpdate))
+        // }
+
     }
 
     // send verify code by email
@@ -72,7 +120,6 @@ export class UserController {
     static registerUser = async (req: Request, res: Response) => {
         try{
             const password = await bcrypt.hash(req.body.password, 10);
-            console.log("password", password);
             const newUser = new userModel({
                 "email": req.body.email,
                 password,
@@ -89,7 +136,6 @@ export class UserController {
             return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrCreate))
         }
 
-        //whatever
         return res.status(StatusCode.E200).send(new Error("Registered successfully", StatusCode.E200, Message.OK))
     }
 
@@ -98,21 +144,15 @@ export class UserController {
     }
 
     static getUserId = async (req: CustomRequest, res: Response) => {
-        const db = getDb();
+        let user: any
+        if(req.userWithJwt) {try {
+            user = await userModel.findOne({
+                email: req.userWithJwt.email,
+            });
 
-            try {
-                const users = db.collection("user");
-                console.log("====================================1");
-
-                const user = await users.findOne({
-                    email: "Tsdfemail",
-                });
-
-                console.log("====================================", user);
-                return res.status(StatusCode.E200).send(new Error(user, StatusCode.E200, Message.OK))
-            } catch (e) {
-                return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
-            }
-
+        } catch (e) {
+            return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
+        }}
+        return res.status(StatusCode.E200).send(new Error(user, StatusCode.E200, Message.OK))
     }
 }

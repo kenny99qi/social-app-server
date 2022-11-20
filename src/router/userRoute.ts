@@ -5,14 +5,14 @@ import {verifyUser} from "../middleware/auth/AuthMiddleware";
 
 const userRouter = Router()
 
-userRouter.get('/', UserController.getAllUsers)
+userRouter.get('/', verifyUser, UserController.getAllUsers)
 
 // ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ JWT OAuth ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇
 // login user
 userRouter.post('/auth/login', UserController.loginUser)
 
 // refresh token
-userRouter.post('/auth/refresh', UserController.getNewTokens)
+userRouter.post('/auth/update', verifyUser, UserController.updateUser)
 
 // send verify code by email
 userRouter.post('/auth/register/verify', UserController.sendVerifyCode)
@@ -21,6 +21,6 @@ userRouter.post('/auth/register/verify', UserController.sendVerifyCode)
 userRouter.post('/auth/register', UserController.registerUser)
 
 // get user id
-userRouter.get('/getId', UserController.getUserId)
+userRouter.get('/getId', verifyUser, UserController.getUserId)
 
 export default userRouter

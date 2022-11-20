@@ -54,7 +54,6 @@ export const connectToServer = async () => {
             // useFindAndModify: false
         });
         db = mongoose.connection;
-        // console.log(db)
         db.on("error", console.error.bind(console, "connection error: "));
         db.once("open", function () {
             console.log("Connected successfully");

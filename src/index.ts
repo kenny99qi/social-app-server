@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import routers from "./router/_routes";
 import bodyParser from 'body-parser'
 import express, {Application, Request, Response} from "express"
-import passport from "./middleware/passport-setup";
+// import passport from "./middleware/passport-setup";
 import { connectToServer } from "./data-source";
 
 dotenv.config()

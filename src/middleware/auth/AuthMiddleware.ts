@@ -5,9 +5,9 @@ import {Message, StatusCode} from "../../util/Error";
 require('dotenv').config()
 
 export type JwtPayload = {
-    _id: string,
     email: string,
-    isStaff: boolean
+    isStaff: boolean,
+    id: string
 }
 
 export interface CustomRequest extends Request {
@@ -38,7 +38,6 @@ export const verifyUser = async (req: CustomRequest, res: Response, next: NextFu
                     })
                     return
                 }
-
                 // the token is valid
                 // attach user info on req
                 req.userWithJwt = user as JwtPayload
