@@ -15,12 +15,20 @@ export class UserController {
         if(req.userWithJwt?.isStaff) {
             try{
                 users = await userModel.find();
-
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
         } else{
-            return res.status(StatusCode.E400).json(new Error(Message.NoPermit, StatusCode.E500, Message.NoPermit))
+            try{
+                const allUsers = await userModel.find();
+                users = {
+                    avatar: allUsers.avatar,
+                    username: allUsers.username,
+
+                }
+            } catch (e) {
+                return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
+            }
         }
         return res.status(200).json(new Error(users, StatusCode.E200, Message.OK));
     }
@@ -69,14 +77,14 @@ export class UserController {
 
     // refresh tokens: get a new access token and a new refresh token
     static updateUser = async (req: CustomRequest, res: Response) => {
-        // try{
-            // const {email, password, username, avatar, isStaff, isVerified, isActive } = req.body
-            let users: any
-            if(req.userWithJwt) {
-                const {email, isStaff, id} = req.userWithJwt as JwtPayload
-                if(isStaff) {
-                    try{
-                        users = await userModel.findOneAndUpdate({_id: req.body.id},{
+        let users: any
+        if (req.userWithJwt) {
+            const {email, isStaff, id} = req.userWithJwt as JwtPayload
+            if (isStaff) {
+                // update other user's info
+                if (req.body.id) {
+                    try {
+                        users = await userModel.findOneAndUpdate({_id: req.body.id}, {
                             "email": req.body.email,
                             "password": req.body.password,
                             "username": req.body.username,
@@ -89,31 +97,44 @@ export class UserController {
                     } catch (e) {
                         return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrUpdate))
                     }
-                }  else {
-                    if(req.body.isStaff || req.body.isVerified || req.body.isActive) {
-                        return res.status(StatusCode.E400).json(new Error(Message.NoPermit, StatusCode.E500, Message.NoPermit))
-                    }
-                    try{
-                        console.log("id", id)
-                        users = await userModel.findOneAndUpdate({_id: id},{
+                } else{
+                    // update current user's info
+                    try {
+                        users = await userModel.findOneAndUpdate({_id: id}, {
                             "email": req.body.email,
                             "password": req.body.password,
                             "username": req.body.username,
                             "avatar": req.body.avatar,
+                            "isStaff": req.body.isStaff,
+                            "isVerified": req.body.isVerified,
+                            "isActive": req.body.isActive
                         });
                         users = await userModel.findOne({_id: id})
                     } catch (e) {
                         return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrUpdate))
                     }
                 }
-            } else{
-                return res.status(StatusCode.E400).json(new Error(Message.NoPermit, StatusCode.E500, Message.NoPermit))
+            } else {
+                if (req.body.isStaff || req.body.isVerified || req.body.isActive) {
+                    return res.status(StatusCode.E400).json(new Error(Message.NoPermit, StatusCode.E500, Message.NoPermit))
+                }
+                try {
+                    console.log("id", id)
+                    users = await userModel.findOneAndUpdate({_id: id}, {
+                        "email": req.body.email,
+                        "password": req.body.password,
+                        "username": req.body.username,
+                        "avatar": req.body.avatar,
+                    });
+                    users = await userModel.findOne({_id: id})
+                } catch (e) {
+                    return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrUpdate))
+                }
             }
-            return res.status(200).json(new Error(users, StatusCode.E200, Message.OK));
-        // } catch (e) {
-        //     return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrUpdate))
-        // }
-
+        } else {
+            return res.status(StatusCode.E400).json(new Error(Message.NoPermit, StatusCode.E500, Message.NoPermit))
+        }
+        return res.status(200).json(new Error(users, StatusCode.E200, Message.OK));
     }
 
     // send verify code by email
@@ -145,15 +166,25 @@ export class UserController {
 
     // logout user if user login with oAuth
     static logoutUser = (req: Request, res: Response) => {
+        req.logout(e => {
+            if(e){
+                const error = new Error(e, StatusCode.E500, Message.LogoutError)
+                res.status(error.statusCode).json(error)
+                return
+            }
+        })
+
+        return res.status(200).json({
+            message: 'user logout'
+        })
     }
 
-    static getUserId = async (req: CustomRequest, res: Response) => {
+    static getUserInfo = async (req: CustomRequest, res: Response) => {
         let user: any
         if(req.userWithJwt) {try {
             user = await userModel.findOne({
                 email: req.userWithJwt.email,
             });
-
         } catch (e) {
             return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
         }}

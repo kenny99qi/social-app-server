@@ -21,6 +21,9 @@ userRouter.post('/auth/register/verify', UserController.sendVerifyCode)
 userRouter.post('/auth/register', UserController.registerUser)
 
 // get user id
-userRouter.get('/getId', verifyUser, UserController.getUserId)
+userRouter.get('/getInfo', verifyUser, UserController.getUserInfo)
+
+// logout user if the user login with oAuth
+userRouter.delete('/auth/logout', UserController.logoutUser)
 
 export default userRouter

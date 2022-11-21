@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import routers from "./router/_routes";
 import bodyParser from 'body-parser'
+import cors from 'cors'
 import express, {Application, Request, Response} from "express"
 // import passport from "./middleware/passport-setup";
 import { connectToServer } from "./data-source";
@@ -11,7 +12,12 @@ const startServer = async () => {
     const app: Application = express()
 
     // middleware
-    app.use(bodyParser.json())
+    app.use(bodyParser.json({limit: '50mb'}));
+    app.use(cors({methods: ['GET', 'POST', 'PUT', 'DELETE'],
+        credentials: true,
+        origin: process.env.CLIENT_URL as string
+    }))
+
     // app.use(passport.initialize())
     // app.use(passport.session())
     // app.use(require('./entity/User'))
