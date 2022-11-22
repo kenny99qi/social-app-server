@@ -6,8 +6,14 @@ const FollowSchema = new Schema({
         required: true,
         unique: true
     },
-    following: [String],
-    followers: [String],
+    following: [{
+        type: String,
+        unique: true
+    }],
+    followers: [{
+        type: String,
+        unique: true
+    }],
     status: {
         isActive: {
             type: Boolean,

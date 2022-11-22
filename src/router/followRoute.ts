@@ -5,12 +5,10 @@ import {verifyUser} from "../middleware/auth/AuthMiddleware";
 
 const followRouter = Router()
 
-followRouter.get('/allFollowers', verifyUser, FollowController.getAllFollowers)
+followRouter.get('/', verifyUser, FollowController.getAllFollowInfo)
 
-followRouter.get('/allFollowings', FollowController.getAllFollowings)
+followRouter.post('/update', verifyUser, FollowController.unfollow)
 
-followRouter.post('/unfollow', verifyUser, FollowController.unfollow)
-
-followRouter.post('/follow', verifyUser, FollowController.follow)
+followRouter.post('/', verifyUser, FollowController.follow)
 
 export default followRouter
