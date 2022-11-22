@@ -1,8 +1,6 @@
 import {Request, Response} from 'express'
 import Error, {Message, StatusCode} from "../util/Error";
 import {CustomRequest, JwtPayload} from "../middleware/auth/AuthMiddleware";
-import bcrypt from "bcrypt";
-const userModel = require('../models/user')
 const postModel = require('../models/post')
 
 require('dotenv').config()
@@ -100,6 +98,11 @@ export class PostController {
         if(req.userWithJwt) {
             const {id} = req.userWithJwt as JwtPayload
             try{
+                const check = await postModel.findOne({_id: req.body.postId, "interaction.comments.userId": id});
+                console.log(check)
+                if(check.userId !== id){
+                    return res.status(StatusCode.E500).json(new Error(Message.NoAuth, StatusCode.E500, Message.NoAuth))
+                }
                 post = await postModel
                     .findOneAndUpdate({_id: req.body.postId}, {$pull: {"interaction.comments": {_id: req.body.commentId}}});
                 post = await postModel.findOne({_id: req.body.postId});

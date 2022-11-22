@@ -81,7 +81,7 @@ export class UserController {
     static updateUser = async (req: CustomRequest, res: Response) => {
         let users: any
         if (req.userWithJwt) {
-            const {email, isStaff, id} = req.userWithJwt as JwtPayload
+            const {isStaff, id} = req.userWithJwt as JwtPayload
             if (isStaff) {
                 // update other user's info
                 if (req.body.id) {
