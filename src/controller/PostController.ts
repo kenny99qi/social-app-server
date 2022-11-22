@@ -2,144 +2,189 @@ import {Request, Response} from 'express'
 import Error, {Message, StatusCode} from "../util/Error";
 import {CustomRequest, JwtPayload} from "../middleware/auth/AuthMiddleware";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+const userModel = require('../models/user')
 const postModel = require('../models/post')
 
 require('dotenv').config()
 
 export class PostController {
     static getAllPosts = async (req: CustomRequest, res: Response) => {
-        let users: any[] = []
-        if(req.userWithJwt?.isStaff) {
+        let posts: any[] = []
+        if(req.userWithJwt) {
             try{
-                users = await postModel.find();
+                posts = await postModel.find();
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
         } else{
+                return res.status(StatusCode.E500).json(new Error(Message.ErrFind, StatusCode.E500, Message.ErrFind))
+        }
+        return res.status(200).json(new Error(posts, StatusCode.E200, Message.OK));
+    }
+
+    static getUserPosts = async (req: CustomRequest, res: Response) => {
+        let posts: any[] = []
+        if(req.userWithJwt) {
             try{
-                const allUsers = await postModel.find();
-                await Promise.all(allUsers?.map(async (value: any, index: any) => {
-                    const user = {
-                        id: value._id,
-                        username: value.username,
-                        avatar: value.avatar,
-                    }
-                    users.push(user)
-                }))
+                posts = await postModel.find({userId: req.params.userId});
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
+        } else{
+                return res.status(StatusCode.E500).json(new Error(Message.ErrFind, StatusCode.E500, Message.ErrFind))
         }
-        return res.status(200).json(new Error(users, StatusCode.E200, Message.OK));
+        return res.status(200).json(new Error(posts, StatusCode.E200, Message.OK));
+    }
+
+    static likePost = async (req: CustomRequest, res: Response) => {
+        let post: any
+        if(req.userWithJwt) {
+            const {id} = req.userWithJwt as JwtPayload
+            try{
+                const duplicate = await postModel.findOne({_id: req.params.postId});
+                if(duplicate?.interaction.likes.includes(id)){
+                    return res.status(StatusCode.E500).json(new Error(Message.ErrDuplicate, StatusCode.E500, Message.ErrDuplicate))
+                }
+                post = await postModel.findOneAndUpdate({_id: req.params.postId}, {$push: {"interaction.likes": id}});
+
+                post = await postModel.findOne({_id: req.params.postId});
+            } catch (e) {
+                return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
+            }
+        } else{
+                return res.status(StatusCode.E500).json(new Error(Message.ErrFind, StatusCode.E500, Message.ErrFind))
+        }
+        return res.status(200).json(new Error(post, StatusCode.E200, Message.OK));
+    }
+
+    static dislikePost = async (req: CustomRequest, res: Response) => {
+        let post: any
+        if(req.userWithJwt) {
+            const {id} = req.userWithJwt as JwtPayload
+            try{
+                post = await postModel.findOneAndUpdate({_id: req.params.postId}, {$pull: {"interaction.likes": id}});
+                post = await postModel.findOne({_id: req.params.postId});
+            } catch (e) {
+                return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
+            }
+        } else{
+                return res.status(StatusCode.E500).json(new Error(Message.ErrFind, StatusCode.E500, Message.ErrFind))
+        }
+
+        return res.status(200).json(new Error(post, StatusCode.E200, Message.OK));
+    }
+
+    static commentPost = async (req: CustomRequest, res: Response) => {
+        let post: any
+        if(req.userWithJwt) {
+            const {id} = req.userWithJwt as JwtPayload
+            try{
+                post = await postModel.findOneAndUpdate({_id: req.params.postId}, {$push: {"interaction.comments": {
+                            userId: id,
+                            text: req.body.text,
+                            img: req.body.img,
+                            createdAt: new Date()
+                        }}});
+                post = await postModel.findOne({_id: req.params.postId});
+            } catch (e) {
+                return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
+            }
+        } else{
+            return res.status(StatusCode.E500).json(new Error(Message.ErrFind, StatusCode.E500, Message.ErrFind))
+        }
+        return res.status(200).json(new Error(post, StatusCode.E200, Message.OK));
+    }
+
+    static deleteCommentPost = async (req: CustomRequest, res: Response) => {
+        let post: any
+        if(req.userWithJwt) {
+            const {id} = req.userWithJwt as JwtPayload
+            try{
+                post = await postModel
+                    .findOneAndUpdate({_id: req.body.postId}, {$pull: {"interaction.comments": {_id: req.body.commentId}}});
+                post = await postModel.findOne({_id: req.body.postId});
+            } catch (e) {
+                return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
+
+            }
+        } else{
+            return res.status(StatusCode.E500).json(new Error(Message.ErrFind, StatusCode.E500, Message.ErrFind))
+        }
+        return res.status(200).json(new Error(post, StatusCode.E200, Message.OK));
     }
 
     static getOnePost = async (req: CustomRequest, res: Response) => {
-        let users: any[] = []
-        if(req.userWithJwt?.isStaff) {
+        let post: any
+        if(req.userWithJwt) {
             try{
-                users = await postModel.find();
+                post = await postModel.findOne({_id: req.params.postId});
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
         } else{
-            try{
-                const allUsers = await postModel.find();
-                await Promise.all(allUsers?.map(async (value: any, index: any) => {
-                    const user = {
-                        id: value._id,
-                        username: value.username,
-                        avatar: value.avatar,
-                    }
-                    users.push(user)
-                }))
-            } catch (e) {
-                return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
-            }
+                return res.status(StatusCode.E500).json(new Error(Message.NoAuth, StatusCode.E500, Message.NoAuth))
         }
-        return res.status(200).json(new Error(users, StatusCode.E200, Message.OK));
+        return res.status(200).json(new Error(post, StatusCode.E200, Message.OK));
     }
 
     static createPost = async (req: CustomRequest, res: Response) => {
-        let users: any
         if (req.userWithJwt) {
-            const {email, isStaff, id} = req.userWithJwt as JwtPayload
-            if (isStaff) {
-                // update other user's info
-                if (req.body.id) {
-                    try {
-                        users = await postModel.findOneAndUpdate({_id: req.body.id}, {
-                            "email": req.body.email,
-                            "password": req.body.password,
-                            "username": req.body.username,
-                            "avatar": req.body.avatar,
-                            "isStaff": req.body.isStaff,
-                            "isVerified": req.body.isVerified,
-                            "isActive": req.body.isActive
-                        });
-                        users = await postModel.findOne({_id: req.body.id})
-                    } catch (e) {
-                        return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrUpdate))
+            const {id} = req.userWithJwt as JwtPayload
+            try{
+                const res = await postModel({
+                    userId: id,
+                    content: {
+                        text: req.body.content.text,
+                        avatar: req.body.content.avatar,
+                        img: req.body.content.img,
+                    },
+                    interaction: {
+                        like: [],
+                        comment: [],
+                    },
+                    status:{
+                        createdAt: new Date(),
                     }
-                } else{
-                    // update current user's info
-                    try {
-                        users = await postModel.findOneAndUpdate({_id: id}, {
-                            "email": req.body.email,
-                            "password": req.body.password,
-                            "username": req.body.username,
-                            "avatar": req.body.avatar,
-                            "isStaff": req.body.isStaff,
-                            "isVerified": req.body.isVerified,
-                            "isActive": req.body.isActive
-                        });
-                        users = await postModel.findOne({_id: id})
-                    } catch (e) {
-                        return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrUpdate))
-                    }
-                }
-            } else {
-                if (req.body.isStaff || req.body.isVerified || req.body.isActive) {
-                    return res.status(StatusCode.E400).json(new Error(Message.NoPermit, StatusCode.E500, Message.NoPermit))
-                }
-                try {
-                    console.log("id", id)
-                    users = await postModel.findOneAndUpdate({_id: id}, {
-                        "email": req.body.email,
-                        "password": req.body.password,
-                        "username": req.body.username,
-                        "avatar": req.body.avatar,
-                    });
-                    users = await postModel.findOne({_id: id})
-                } catch (e) {
-                    return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrUpdate))
-                }
+                })
+                await res.save()
+            }
+            catch (e) {
+                return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrCreate))
             }
         } else {
             return res.status(StatusCode.E400).json(new Error(Message.NoPermit, StatusCode.E500, Message.NoPermit))
         }
-        return res.status(200).json(new Error(users, StatusCode.E200, Message.OK));
+        return res.status(200).json(new Error("Post successfully", StatusCode.E200, Message.OK));
     }
 
     static updatePost = async (req: CustomRequest, res: Response) => {
-        try{
-            const password = await bcrypt.hash(req.body.password, 10);
-            const newUser = new postModel({
-                "email": req.body.email,
-                password,
-                "username": req.body.username,
-                "avatar": req.body.avatar,
-                "isStaff": false,
-                "isVerified": false,
-                "isActive": true,
-                "createdAt": new Date(),
-                "lastLogin": new Date(),
-            })
-            await newUser.save()
-        } catch (e) {
-            return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrCreate))
+        let post:any
+        if (req.userWithJwt) {
+            const {id} = req.userWithJwt as JwtPayload
+            try{
+                post = await postModel.findOneAndUpdate({_id: req.body.id, userId: id}, {
+                    content: {
+                        text: req.body.content.text,
+                        avatar: req.body.content.avatar,
+                        img: req.body.content.img,
+                    },
+                    interaction: {
+                        like: [],
+                        comment: [],
+                    },
+                    status:{
+                        editAt: new Date(),
+                    }
+                })
+                post = await postModel.findOne({_id: req.body.id, userId: id})
+            }
+            catch (e) {
+                return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrCreate))
+            }
+        } else {
+            return res.status(StatusCode.E400).json(new Error(Message.NoPermit, StatusCode.E500, Message.NoPermit))
         }
 
-        return res.status(StatusCode.E200).send(new Error("Registered successfully", StatusCode.E200, Message.OK))
+        return res.status(StatusCode.E200).send(new Error(post, StatusCode.E200, Message.OK))
     }
 }

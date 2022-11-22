@@ -5,12 +5,21 @@ import {verifyUser} from "../middleware/auth/AuthMiddleware";
 
 const postRouter = Router()
 
-postRouter.get('/', verifyUser, PostController.getAllPosts)
+postRouter.get('/all', verifyUser, PostController.getAllPosts)
 
-postRouter.get('/:id', PostController.getOnePost)
+postRouter.get('/:userId', verifyUser, PostController.getUserPosts)
+
+postRouter.get('/get/:postId', verifyUser, PostController.getOnePost)
 
 postRouter.post('/create', verifyUser, PostController.createPost)
 
 postRouter.post('/update', verifyUser, PostController.updatePost)
+
+postRouter.post('/like/:postId', verifyUser, PostController.likePost)
+
+postRouter.post('/dislike/:postId', verifyUser, PostController.dislikePost)
+
+postRouter.post('/comment/:postId', verifyUser, PostController.commentPost)
+postRouter.post('/deleteComment', verifyUser, PostController.deleteCommentPost)
 
 export default postRouter

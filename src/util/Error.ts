@@ -11,6 +11,7 @@ export enum Message {
     OK = 'OK',
     ErrFind = 'Cannot find record in the database',
     ErrCreate = 'Cannot create record in the database',
+    ErrDuplicate = 'Duplicate record in the database',
     ErrUpdate = 'Cannot update record in the database',
     ErrParams = 'Necessary params NOT provided',
     ErrToken = 'Token is NOT valid',

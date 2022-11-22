@@ -1,7 +1,8 @@
-import {Request, Response} from 'express'
+import {Response} from 'express'
 import Error, {Message, StatusCode} from "../util/Error";
 import {CustomRequest, JwtPayload} from "../middleware/auth/AuthMiddleware";
 const followModel = require('../models/follow')
+const userModel = require('../models/user')
 
 require('dotenv').config()
 
@@ -9,7 +10,7 @@ export class FollowController {
     static getAllFollowInfo = async (req: CustomRequest, res: Response) => {
         let follow: any = {}
         if(req.userWithJwt) {
-            const {email, isStaff, id} = req.userWithJwt as JwtPayload
+            const {id} = req.userWithJwt as JwtPayload
             try{
                 const rawFollow = await followModel.findOne({
                     userId: id
@@ -113,5 +114,29 @@ export class FollowController {
             }
         }
         return res.status(StatusCode.E200).send(new Error(following, StatusCode.E200, Message.OK))
+    }
+
+    static getSuggestions = async (req: CustomRequest, res: Response) => {
+        let suggestions: any
+        if(req.userWithJwt) {
+            const {id} = req.userWithJwt as JwtPayload
+            try {
+                const rawFollowings = await followModel.findOne({userId: id})
+                const users:any[] = []
+                const allUsers = await userModel.find();
+                await Promise.all(allUsers?.map(async (value: any, index: any) => {
+                    const user = {
+                        id: value._id,
+                        username: value.username,
+                        avatar: value.avatar,
+                    }
+                    users.push(user)
+                }))
+                suggestions = users.filter((value: any) => !rawFollowings.following.includes(value.id) && value.id !== id)
+            } catch (e) {
+                return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
+            }
+        }
+        return res.status(StatusCode.E200).send(new Error(suggestions.slice(1, 7), StatusCode.E200, Message.OK))
     }
 }

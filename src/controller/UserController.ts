@@ -78,7 +78,6 @@ export class UserController {
         }
     }
 
-    // refresh tokens: get a new access token and a new refresh token
     static updateUser = async (req: CustomRequest, res: Response) => {
         let users: any
         if (req.userWithJwt) {
@@ -144,7 +143,6 @@ export class UserController {
     static sendVerifyCode = async (req: Request, res: Response) => {
     }
 
-    // register user
     static registerUser = async (req: Request, res: Response) => {
         try{
             const password = await bcrypt.hash(req.body.password, 10);

@@ -4,7 +4,6 @@ const PostSchema = new Schema({
     userId: {
         type: String,
         required: true,
-        unique: true
     },
     content: {
         text: {
@@ -26,12 +25,14 @@ const PostSchema = new Schema({
                 userId: String,
                 text: String,
                 img: String,
+                createdAt: Date,
             })
         ],
     },
     status: {
         isActive: {
             type: Boolean,
+            default: true,
         },
         createdAt: {
             type: Date,
