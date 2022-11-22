@@ -1,6 +1,5 @@
-const mongoose = require('mongoose')
-const uniqueValidator = require('mongoose-unique-validator')
-const Schema = mongoose.Schema
+import {mongoose, Schema, uniqueValidator} from "./index";
+
 
 const UserSchema = new Schema({
     email: {

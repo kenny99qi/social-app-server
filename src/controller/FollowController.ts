@@ -3,7 +3,7 @@ import Error, {Message, StatusCode} from "../util/Error";
 import {CustomRequest, JwtPayload} from "../middleware/auth/AuthMiddleware";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-const userModel = require('../models/user')
+const followModel = require('../models/follow')
 
 require('dotenv').config()
 
@@ -12,13 +12,13 @@ export class FollowController {
         let users: any[] = []
         if(req.userWithJwt?.isStaff) {
             try{
-                users = await userModel.find();
+                users = await followModel.find();
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
         } else{
             try{
-                const allUsers = await userModel.find();
+                const allUsers = await followModel.find();
                 await Promise.all(allUsers?.map(async (value: any, index: any) => {
                     const user = {
                         id: value._id,
@@ -38,13 +38,13 @@ export class FollowController {
         let users: any[] = []
         if(req.userWithJwt?.isStaff) {
             try{
-                users = await userModel.find();
+                users = await followModel.find();
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
         } else{
             try{
-                const allUsers = await userModel.find();
+                const allUsers = await followModel.find();
                 await Promise.all(allUsers?.map(async (value: any, index: any) => {
                     const user = {
                         id: value._id,
@@ -68,7 +68,7 @@ export class FollowController {
                 // update other user's info
                 if (req.body.id) {
                     try {
-                        users = await userModel.findOneAndUpdate({_id: req.body.id}, {
+                        users = await followModel.findOneAndUpdate({_id: req.body.id}, {
                             "email": req.body.email,
                             "password": req.body.password,
                             "username": req.body.username,
@@ -77,14 +77,14 @@ export class FollowController {
                             "isVerified": req.body.isVerified,
                             "isActive": req.body.isActive
                         });
-                        users = await userModel.findOne({_id: req.body.id})
+                        users = await followModel.findOne({_id: req.body.id})
                     } catch (e) {
                         return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrUpdate))
                     }
                 } else{
                     // update current user's info
                     try {
-                        users = await userModel.findOneAndUpdate({_id: id}, {
+                        users = await followModel.findOneAndUpdate({_id: id}, {
                             "email": req.body.email,
                             "password": req.body.password,
                             "username": req.body.username,
@@ -93,7 +93,7 @@ export class FollowController {
                             "isVerified": req.body.isVerified,
                             "isActive": req.body.isActive
                         });
-                        users = await userModel.findOne({_id: id})
+                        users = await followModel.findOne({_id: id})
                     } catch (e) {
                         return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrUpdate))
                     }
@@ -104,13 +104,13 @@ export class FollowController {
                 }
                 try {
                     console.log("id", id)
-                    users = await userModel.findOneAndUpdate({_id: id}, {
+                    users = await followModel.findOneAndUpdate({_id: id}, {
                         "email": req.body.email,
                         "password": req.body.password,
                         "username": req.body.username,
                         "avatar": req.body.avatar,
                     });
-                    users = await userModel.findOne({_id: id})
+                    users = await followModel.findOne({_id: id})
                 } catch (e) {
                     return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrUpdate))
                 }
@@ -124,7 +124,7 @@ export class FollowController {
     static follow = async (req: CustomRequest, res: Response) => {
         try{
             const password = await bcrypt.hash(req.body.password, 10);
-            const newUser = new userModel({
+            const newUser = new followModel({
                 "email": req.body.email,
                 password,
                 "username": req.body.username,

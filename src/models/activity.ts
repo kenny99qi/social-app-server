@@ -1,19 +1,35 @@
-// const mongoose = require('mongoose')
-// const uniqueValidator = require('mongoose-unique-validator')
-// const Schema = mongoose.Schema
+import {mongoose, Schema, uniqueValidator} from "./index";
 
 const ActivitySchema = new Schema({
-    registered:{
-        type: Number,
-    },
-    loggedin: {
-        type: Number,
-    },
-    posted: {
-        type: Number,
-    }
+    registered:[
+        new Schema({
+            userId: String,
+            username: String,
+            avatar: String,
+            text: String,
+            createdAt: Date,
+        })
+    ],
+    loggedin: [
+        new Schema({
+            userId: String,
+            username: String,
+            avatar: String,
+            text: String,
+            createdAt: Date,
+        })
+    ],
+    posted: [
+        new Schema({
+            userId: String,
+            username: String,
+            avatar: String,
+            text: String,
+            createdAt: Date,
+        })
+    ]
 
 })
-UserSchema.plugin(uniqueValidator)
+ActivitySchema.plugin(uniqueValidator)
 
 module.exports = mongoose.model('Activity', ActivitySchema, 'activity')
