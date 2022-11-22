@@ -11,9 +11,11 @@ const FollowSchema = new Schema({
     status: {
         isActive: {
             type: Boolean,
+            default: true
         },
         editAt: {
             type: Date,
+            default: new Date()
         }
     },
 })

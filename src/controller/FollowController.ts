@@ -9,137 +9,113 @@ require('dotenv').config()
 
 export class FollowController {
     static getAllFollowers = async (req: CustomRequest, res: Response) => {
-        let users: any[] = []
-        if(req.userWithJwt?.isStaff) {
+        let followers: any[] = []
+        if(req.userWithJwt) {
+            const {email, isStaff, id} = req.userWithJwt as JwtPayload
             try{
-                users = await followModel.find();
-            } catch (e) {
-                return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
-            }
-        } else{
-            try{
-                const allUsers = await followModel.find();
-                await Promise.all(allUsers?.map(async (value: any, index: any) => {
-                    const user = {
-                        id: value._id,
-                        username: value.username,
-                        avatar: value.avatar,
-                    }
-                    users.push(user)
-                }))
+                const rawFollowers = await followModel.findOne({
+                    userId: id
+                });
+                rawFollowers?.followers ? followers = rawFollowers.followers : followers = []
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
         }
-        return res.status(200).json(new Error(users, StatusCode.E200, Message.OK));
+        return res.status(200).json(new Error(followers, StatusCode.E200, Message.OK));
     }
 
     static getAllFollowings = async (req: CustomRequest, res: Response) => {
-        let users: any[] = []
-        if(req.userWithJwt?.isStaff) {
+        let following: any[] = []
+        if(req.userWithJwt) {
+            const {email, isStaff, id} = req.userWithJwt as JwtPayload
             try{
-                users = await followModel.find();
-            } catch (e) {
-                return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
-            }
-        } else{
-            try{
-                const allUsers = await followModel.find();
-                await Promise.all(allUsers?.map(async (value: any, index: any) => {
-                    const user = {
-                        id: value._id,
-                        username: value.username,
-                        avatar: value.avatar,
-                    }
-                    users.push(user)
-                }))
+                const rawFollowings = await followModel.findOne({
+                    userId: id
+                });
+                rawFollowings?.following ? following = rawFollowings.following : following = []
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
         }
-        return res.status(200).json(new Error(users, StatusCode.E200, Message.OK));
+        return res.status(200).json(new Error(following, StatusCode.E200, Message.OK));
     }
 
     static unfollow = async (req: CustomRequest, res: Response) => {
-        let users: any
+        let following: any
         if (req.userWithJwt) {
             const {email, isStaff, id} = req.userWithJwt as JwtPayload
-            if (isStaff) {
-                // update other user's info
-                if (req.body.id) {
-                    try {
-                        users = await followModel.findOneAndUpdate({_id: req.body.id}, {
-                            "email": req.body.email,
-                            "password": req.body.password,
-                            "username": req.body.username,
-                            "avatar": req.body.avatar,
-                            "isStaff": req.body.isStaff,
-                            "isVerified": req.body.isVerified,
-                            "isActive": req.body.isActive
-                        });
-                        users = await followModel.findOne({_id: req.body.id})
-                    } catch (e) {
-                        return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrUpdate))
-                    }
-                } else{
-                    // update current user's info
-                    try {
-                        users = await followModel.findOneAndUpdate({_id: id}, {
-                            "email": req.body.email,
-                            "password": req.body.password,
-                            "username": req.body.username,
-                            "avatar": req.body.avatar,
-                            "isStaff": req.body.isStaff,
-                            "isVerified": req.body.isVerified,
-                            "isActive": req.body.isActive
-                        });
-                        users = await followModel.findOne({_id: id})
-                    } catch (e) {
-                        return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrUpdate))
-                    }
-                }
-            } else {
-                if (req.body.isStaff || req.body.isVerified || req.body.isActive) {
-                    return res.status(StatusCode.E400).json(new Error(Message.NoPermit, StatusCode.E500, Message.NoPermit))
-                }
                 try {
-                    console.log("id", id)
-                    users = await followModel.findOneAndUpdate({_id: id}, {
-                        "email": req.body.email,
-                        "password": req.body.password,
-                        "username": req.body.username,
-                        "avatar": req.body.avatar,
+                    const rawFollowings = await followModel.findOne({userId: id})
+                    const newFollowing = rawFollowings.following.filter((value: any) => value !== req.body.useId)
+                    following = await followModel.findOneAndUpdate({userId: id}, {
+                        "following": newFollowing
                     });
-                    users = await followModel.findOne({_id: id})
+                    following = await followModel.findOne({userId: id})
                 } catch (e) {
                     return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrUpdate))
                 }
             }
-        } else {
-            return res.status(StatusCode.E400).json(new Error(Message.NoPermit, StatusCode.E500, Message.NoPermit))
-        }
-        return res.status(200).json(new Error(users, StatusCode.E200, Message.OK));
+        return res.status(200).json(new Error(following, StatusCode.E200, Message.OK));
     }
 
     static follow = async (req: CustomRequest, res: Response) => {
-        try{
-            const password = await bcrypt.hash(req.body.password, 10);
-            const newUser = new followModel({
-                "email": req.body.email,
-                password,
-                "username": req.body.username,
-                "avatar": req.body.avatar,
-                "isStaff": false,
-                "isVerified": false,
-                "isActive": true,
-                "createdAt": new Date(),
-                "lastLogin": new Date(),
-            })
-            await newUser.save()
-        } catch (e) {
-            return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrCreate))
-        }
+        let following: any
+        if(req.userWithJwt) {
+            const {email, isStaff, id} = req.userWithJwt as JwtPayload
+            try {
+                const checkFollow = await followModel.findOne({
+                    userId: id,
+                })
+                if (checkFollow) {
+                    const newFollowing = [...checkFollow.following, req.body.userId]
+                    following = await followModel.findOneAndUpdate({userId: id}, {
+                        "following": newFollowing
+                    });
+                    following = await followModel.findOne({userId: id})
 
-        return res.status(StatusCode.E200).send(new Error("Registered successfully", StatusCode.E200, Message.OK))
+                    const checkFollower = await followModel.findOne({
+                        userId: req.body.userId,
+                    })
+                    if (checkFollower) {
+                        const newFollower = [...checkFollower.followers, id]
+                        await followModel.findOneAndUpdate({userId: req.body.userId},{
+                            "followers": newFollower
+                    })} else {
+                        const newFollower = [id]
+                        const follower = await followModel({
+                            userId: req.body.userId,
+                            followers: newFollower
+                        })
+                        await follower.save()
+                    }
+                } else {
+                    const newFollowing = [req.body.userId]
+                    following = await followModel({
+                        userId: id,
+                        following: newFollowing
+                    });
+                    await following.save()
+
+                    const checkFollower = await followModel.findOne({
+                        userId: req.body.userId,
+                    })
+                    if (checkFollower) {
+                        const newFollower = [...checkFollower.followers, id]
+                        await followModel.findOneAndUpdate({userId: req.body.userId},{
+                            "followers": newFollower
+                        })} else {
+                        const newFollower = [id]
+                        const follower = await followModel({
+                            userId: req.body.userId,
+                            followers: newFollower
+                        })
+                        await follower.save()
+                    }
+                }
+            } catch (e) {
+                return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrCreate))
+            }
+        }
+        return res.status(StatusCode.E200).send(new Error(following, StatusCode.E200, Message.OK))
     }
 }
