@@ -250,8 +250,6 @@ export class FollowController {
                         const userId = value.id.valueOf()
                         if (userId !== id) {
                             suggestions.push(value)
-                        } else {
-                            console.log("same")
                         }
                     }))
                 } else {
@@ -260,8 +258,6 @@ export class FollowController {
                         const duplicate = rawFollowings.following.filter((value: any) => value === userId)
                         if (duplicate.length === 0 && userId !== id) {
                             suggestions.push(value)
-                        } else {
-                            console.log("same")
                         }
                     }))
                 }

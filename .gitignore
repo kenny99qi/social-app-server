@@ -14,6 +14,7 @@ temp/
 .env.production.local
 yarn.lock
 package-lock.json
+tsconfig.json
 
 dump.rdb
 npm-debug.log*
