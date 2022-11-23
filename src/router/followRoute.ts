@@ -9,6 +9,8 @@ followRouter.get('/', verifyUser, FollowController.getAllFollowInfo)
 
 followRouter.get('/suggestion', verifyUser, FollowController.getSuggestions)
 
+followRouter.post('/dislike', verifyUser, FollowController.dislikeFollow)
+
 followRouter.post('/update', verifyUser, FollowController.unfollow)
 
 followRouter.post('/', verifyUser, FollowController.follow)

@@ -8,11 +8,12 @@ const FollowSchema = new Schema({
     },
     following: [{
         type: String,
-        unique: true
     }],
     followers: [{
         type: String,
-        unique: true
+    }],
+    dislike: [{
+        type: String,
     }],
     status: {
         isActive: {

@@ -16,9 +16,18 @@ export class FollowController {
                 const rawFollow = await followModel.findOne({
                     userId: id
                 });
-                follow = rawFollow
-                rawFollow?.followers ? follow.followers = rawFollow.followers : follow.followers = []
-                rawFollow?.following ? follow.following = rawFollow.following : follow.following = []
+                if(!rawFollow) {
+                    follow = {
+                        userId: id,
+                        following: [],
+                        followers: [],
+                        dislike: []
+                    }
+                } else {
+                    follow = rawFollow
+                    rawFollow?.followers ? follow.followers = rawFollow.followers : follow.followers = []
+                    rawFollow?.following ? follow.following = rawFollow.following : follow.following = []
+                }
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
@@ -182,8 +191,46 @@ export class FollowController {
         return res.status(StatusCode.E200).send(new Error(following, StatusCode.E200, Message.OK))
     }
 
+    static dislikeFollow = async (req: CustomRequest, res: Response) => {
+        let dislike: any
+        if(req.userWithJwt) {
+            const {id} = req.userWithJwt as JwtPayload
+            try {
+                const checkDislike = await followModel.findOne({
+                    userId: id,
+                })
+                if (checkDislike) {
+                    if (checkDislike.dislike) {
+                        const newDislike = checkDislike.dislike.filter((value: any) => value === req.body.userId)
+                        if (newDislike.length > 0) {
+                            return res.status(StatusCode.E400).json(new Error("You have already disliked this user!", StatusCode.E400, Message.ErrCreate))
+                        } else {
+                            const newDislike = [...checkDislike.dislike, req.body.userId]
+                            dislike = await followModel.findOneAndUpdate({userId: id}, {
+                                "dislike": newDislike
+                            })
+                        }
+                    } else {
+                        dislike = await followModel.findOneAndUpdate({userId: id}, {
+                            "dislike": [req.body.userId]
+                        })
+                    }
+                } else {
+                    dislike = await followModel({
+                        userId: id,
+                        dislike: [req.body.userId]
+                    })
+                    await dislike.save()
+                }
+            } catch (e) {
+                return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrCreate))
+            }
+        }
+        return res.status(StatusCode.E200).send(new Error(dislike, StatusCode.E200, Message.OK))
+    }
+
     static getSuggestions = async (req: CustomRequest, res: Response) => {
-        let suggestions: any
+        let suggestions: any[] = []
         if(req.userWithJwt) {
             const {id} = req.userWithJwt as JwtPayload
             try {
@@ -198,11 +245,30 @@ export class FollowController {
                     }
                     users.push(user)
                 }))
-                suggestions = users.filter((value: any) => !rawFollowings.following.includes(value.id) && value.id !== id)
+                if (!rawFollowings) {
+                    await Promise.all(users?.map(async (value: any) => {
+                        const userId = value.id.valueOf()
+                        if (userId !== id) {
+                            suggestions.push(value)
+                        } else {
+                            console.log("same")
+                        }
+                    }))
+                } else {
+                    await Promise.all(users?.map(async (value: any) => {
+                        const userId = value.id.valueOf()
+                        const duplicate = rawFollowings.following.filter((value: any) => value === userId)
+                        if (duplicate.length === 0 && userId !== id) {
+                            suggestions.push(value)
+                        } else {
+                            console.log("same")
+                        }
+                    }))
+                }
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
         }
-        return res.status(StatusCode.E200).send(new Error(suggestions.slice(1, 7), StatusCode.E200, Message.OK))
+        return res.status(StatusCode.E200).send(new Error(suggestions.slice(0, 6), StatusCode.E200, Message.OK))
     }
 }
