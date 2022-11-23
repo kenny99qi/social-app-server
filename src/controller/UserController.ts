@@ -4,6 +4,7 @@ import {CustomRequest, JwtPayload} from "../middleware/auth/AuthMiddleware";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 const userModel = require('../models/user')
+const activityModel = require('../models/activity')
 
 require('dotenv').config()
 // redis keeps verify code for 5 min
@@ -67,6 +68,14 @@ export class UserController {
                     lastLogin: new Date()
                 })
                 lastLogin = await userModel.findOne({email:req.body.email})
+                const activityRecord = await activityModel({
+                    userId: id,
+                    username: user.username,
+                    avatar: user.avatar,
+                    activities: 'login',
+                    createdAt: new Date(),
+                })
+                await activityRecord.save()
                 return res.status(200).json({
                     accessToken: accessToken,
                     lastLogin: lastLogin.lastLogin,
@@ -96,6 +105,14 @@ export class UserController {
                             "isActive": req.body.isActive
                         });
                         users = await userModel.findOne({_id: req.body.id})
+                        const activityRecord = await activityModel({
+                            userId: req.body.id,
+                            username: users.username,
+                            avatar: users.avatar,
+                            activities: 'updateUserInfo',
+                            createdAt: new Date(),
+                        })
+                        await activityRecord.save()
                     } catch (e) {
                         return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrUpdate))
                     }
@@ -112,6 +129,14 @@ export class UserController {
                             "isActive": req.body.isActive
                         });
                         users = await userModel.findOne({_id: id})
+                        const activityRecord = await activityModel({
+                            userId: id,
+                            username: users.username,
+                            avatar: users.avatar,
+                            activities: 'updateUserInfo',
+                            createdAt: new Date(),
+                        })
+                        await activityRecord.save()
                     } catch (e) {
                         return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrUpdate))
                     }
@@ -129,6 +154,14 @@ export class UserController {
                         "avatar": req.body.avatar,
                     });
                     users = await userModel.findOne({_id: id})
+                    const activityRecord = await activityModel({
+                        userId: id,
+                        username: users.username,
+                        avatar: users.avatar,
+                        activities: 'updateUserInfo',
+                        createdAt: new Date(),
+                    })
+                    await activityRecord.save()
                 } catch (e) {
                     return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrUpdate))
                 }
@@ -158,6 +191,15 @@ export class UserController {
                 "lastLogin": new Date(),
             })
             await newUser.save()
+            const users = await userModel.findOne({email: req.body.email})
+            const activityRecord = await activityModel({
+                userId: users._id,
+                username: users.username,
+                avatar: users.avatar,
+                activities: 'register',
+                createdAt: new Date(),
+            })
+            await activityRecord.save()
         } catch (e) {
             return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrCreate))
         }
@@ -166,14 +208,25 @@ export class UserController {
     }
 
     // logout user if user login with oAuth
-    static logoutUser = (req: Request, res: Response) => {
-        req.logout(e => {
-            if(e){
-                const error = new Error(e, StatusCode.E500, Message.LogoutError)
-                res.status(error.statusCode).json(error)
-                return
+    static logoutUser = async (req: CustomRequest, res: Response) => {
+        if (req.userWithJwt) {
+            const {id} = req.userWithJwt as JwtPayload
+            try{
+                const user = await userModel.findOne({_id: id})
+                const activityRecord = await activityModel({
+                    userId: user._id,
+                    username: user.username,
+                    avatar: user.avatar,
+                    activities: 'logout',
+                    createdAt: new Date(),
+                })
+                await activityRecord.save()
+            } catch (e) {
+                return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrCreate))
             }
-        })
+        } else {
+            return res.status(StatusCode.E400).json(new Error(Message.NoAuth, StatusCode.E500, Message.NoAuth))
+        }
 
         return res.status(200).json({
             message: 'user logout'

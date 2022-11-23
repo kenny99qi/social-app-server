@@ -3,6 +3,7 @@ import Error, {Message, StatusCode} from "../util/Error";
 import {CustomRequest, JwtPayload} from "../middleware/auth/AuthMiddleware";
 const followModel = require('../models/follow')
 const userModel = require('../models/user')
+const activityModel = require('../models/activity')
 
 require('dotenv').config()
 
@@ -36,6 +37,15 @@ export class FollowController {
                         "following": newFollowing
                     });
                     following = await followModel.findOne({userId: id})
+                    const user = await userModel.findOne({_id: id})
+                    const activityRecord = await activityModel({
+                        userId: user._id,
+                        username: user.username,
+                        avatar: user.avatar,
+                        activities: 'unfollow',
+                        createdAt: new Date(),
+                    })
+                    await activityRecord.save()
                 } catch (e) {
                     return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrUpdate))
                 }
@@ -65,6 +75,15 @@ export class FollowController {
                             "following": newFollowing
                         });
                         following = await followModel.findOne({userId: id})
+                        const user = await userModel.findOne({_id: id})
+                        const activityRecord = await activityModel({
+                            userId: user._id,
+                            username: user.username,
+                            avatar: user.avatar,
+                            activities: 'newfollowing',
+                            createdAt: new Date(),
+                        })
+                        await activityRecord.save()
 
                         const checkFollower = await followModel.findOne({
                             userId: req.body.userId,
@@ -73,13 +92,32 @@ export class FollowController {
                             const newFollower = [...checkFollower.followers, id]
                             await followModel.findOneAndUpdate({userId: req.body.userId},{
                                 "followers": newFollower
-                            })} else {
+                            })
+                            const user = await userModel.findOne({_id: req.body.userId})
+                            const activityRecord = await activityModel({
+                                userId: user._id,
+                                username: user.username,
+                                avatar: user.avatar,
+                                activities: 'newfollower',
+                                createdAt: new Date(),
+                            })
+                            await activityRecord.save()
+                        } else {
                             const newFollower = [id]
                             const follower = await followModel({
                                 userId: req.body.userId,
                                 followers: newFollower
                             })
                             await follower.save()
+                            const user = await userModel.findOne({_id: req.body.userId})
+                            const activityRecord = await activityModel({
+                                userId: user._id,
+                                username: user.username,
+                                avatar: user.avatar,
+                                activities: 'newfollower',
+                                createdAt: new Date(),
+                            })
+                            await activityRecord.save()
                         }
                     } else {
                         const newFollowing = [req.body.userId]
@@ -88,6 +126,15 @@ export class FollowController {
                             following: newFollowing
                         });
                         await following.save()
+                        const user = await userModel.findOne({_id: id})
+                        const activityRecord = await activityModel({
+                            userId: user._id,
+                            username: user.username,
+                            avatar: user.avatar,
+                            activities: 'newfollowing',
+                            createdAt: new Date(),
+                        })
+                        await activityRecord.save()
 
                         const checkFollower = await followModel.findOne({
                             userId: req.body.userId,
@@ -96,13 +143,32 @@ export class FollowController {
                             const newFollower = [...checkFollower.followers, id]
                             await followModel.findOneAndUpdate({userId: req.body.userId},{
                                 "followers": newFollower
-                            })} else {
+                            })
+                            const user = await userModel.findOne({_id: req.body.userId})
+                            const activityRecord = await activityModel({
+                                userId: user._id,
+                                username: user.username,
+                                avatar: user.avatar,
+                                activities: 'newfollower',
+                                createdAt: new Date(),
+                            })
+                            await activityRecord.save()
+                        } else {
                             const newFollower = [id]
                             const follower = await followModel({
                                 userId: req.body.userId,
                                 followers: newFollower
                             })
                             await follower.save()
+                            const user = await userModel.findOne({_id: req.body.userId})
+                            const activityRecord = await activityModel({
+                                userId: user._id,
+                                username: user.username,
+                                avatar: user.avatar,
+                                activities: 'newfollower',
+                                createdAt: new Date(),
+                            })
+                            await activityRecord.save()
                         }
                     }
                 } else {

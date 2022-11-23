@@ -1,7 +1,9 @@
-import {Request, Response} from 'express'
+import {Response} from 'express'
 import Error, {Message, StatusCode} from "../util/Error";
 import {CustomRequest, JwtPayload} from "../middleware/auth/AuthMiddleware";
 const postModel = require('../models/post')
+const userModel = require('../models/user')
+const activityModel = require('../models/activity')
 
 require('dotenv').config()
 
@@ -46,6 +48,15 @@ export class PostController {
                 post = await postModel.findOneAndUpdate({_id: req.params.postId}, {$push: {"interaction.likes": id}});
 
                 post = await postModel.findOne({_id: req.params.postId});
+                const user = await userModel.findOne({_id: id})
+                const activityRecord = await activityModel({
+                    userId: user._id,
+                    username: user.username,
+                    avatar: user.avatar,
+                    activities: 'likePost',
+                    createdAt: new Date(),
+                })
+                await activityRecord.save()
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
@@ -62,6 +73,15 @@ export class PostController {
             try{
                 post = await postModel.findOneAndUpdate({_id: req.params.postId}, {$pull: {"interaction.likes": id}});
                 post = await postModel.findOne({_id: req.params.postId});
+                const user = await userModel.findOne({_id: id})
+                const activityRecord = await activityModel({
+                    userId: user._id,
+                    username: user.username,
+                    avatar: user.avatar,
+                    activities: 'unlikePost',
+                    createdAt: new Date(),
+                })
+                await activityRecord.save()
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
@@ -84,6 +104,15 @@ export class PostController {
                             createdAt: new Date()
                         }}});
                 post = await postModel.findOne({_id: req.params.postId});
+                const user = await userModel.findOne({_id: id})
+                const activityRecord = await activityModel({
+                    userId: user._id,
+                    username: user.username,
+                    avatar: user.avatar,
+                    activities: 'commentPost',
+                    createdAt: new Date(),
+                })
+                await activityRecord.save()
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
@@ -106,6 +135,15 @@ export class PostController {
                 post = await postModel
                     .findOneAndUpdate({_id: req.body.postId}, {$pull: {"interaction.comments": {_id: req.body.commentId}}});
                 post = await postModel.findOne({_id: req.body.postId});
+                const user = await userModel.findOne({_id: id})
+                const activityRecord = await activityModel({
+                    userId: user._id,
+                    username: user.username,
+                    avatar: user.avatar,
+                    activities: 'deleteCommentPost',
+                    createdAt: new Date(),
+                })
+                await activityRecord.save()
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
 
@@ -150,6 +188,15 @@ export class PostController {
                     }
                 })
                 await res.save()
+                const user = await userModel.findOne({_id: id})
+                const activityRecord = await activityModel({
+                    userId: user._id,
+                    username: user.username,
+                    avatar: user.avatar,
+                    activities: 'createPost',
+                    createdAt: new Date(),
+                })
+                await activityRecord.save()
             }
             catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrCreate))
@@ -180,6 +227,47 @@ export class PostController {
                     }
                 })
                 post = await postModel.findOne({_id: req.body.id, userId: id})
+                const user = await userModel.findOne({_id: id})
+                const activityRecord = await activityModel({
+                    userId: user._id,
+                    username: user.username,
+                    avatar: user.avatar,
+                    activities: 'updatePost',
+                    createdAt: new Date(),
+                })
+                await activityRecord.save()
+            }
+            catch (e) {
+                return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrCreate))
+            }
+        } else {
+            return res.status(StatusCode.E400).json(new Error(Message.NoPermit, StatusCode.E500, Message.NoPermit))
+        }
+
+        return res.status(StatusCode.E200).send(new Error(post, StatusCode.E200, Message.OK))
+    }
+
+    static deletePost = async (req: CustomRequest, res: Response) => {
+        let post:any
+        if (req.userWithJwt) {
+            const {id} = req.userWithJwt as JwtPayload
+            try{
+                post = await postModel.findOneAndUpdate({_id: req.body.id, userId: id}, {
+                    status:{
+                        isActive: false,
+                        editAt: new Date(),
+                    }
+                })
+                post = await postModel.findOne({_id: req.body.id, userId: id})
+                const user = await userModel.findOne({_id: id})
+                const activityRecord = await activityModel({
+                    userId: user._id,
+                    username: user.username,
+                    avatar: user.avatar,
+                    activities: 'deletePost',
+                    createdAt: new Date(),
+                })
+                await activityRecord.save()
             }
             catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrCreate))
