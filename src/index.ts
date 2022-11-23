@@ -2,8 +2,7 @@ import dotenv from "dotenv";
 import routers from "./router/_routes";
 import bodyParser from 'body-parser'
 import cors from 'cors'
-import express, {Application, Request, Response} from "express"
-// import passport from "./middleware/passport-setup";
+import express, {Application, Request, Response} from "express";
 import { connectToServer } from "./data-source";
 
 dotenv.config()
@@ -18,9 +17,6 @@ const startServer = async () => {
         origin: process.env.CLIENT_URL as string
     }))
 
-    // app.use(passport.initialize())
-    // app.use(passport.session())
-    // app.use(require('./entity/User'))
     app.use(routers)
 
     // error handler

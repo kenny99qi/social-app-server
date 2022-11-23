@@ -7,8 +7,6 @@ const userModel = require('../models/user')
 const activityModel = require('../models/activity')
 
 require('dotenv').config()
-// redis keeps verify code for 5 min
-const ttl = 60 * 5
 
 export class UserController {
     static getAllUsers = async (req: CustomRequest, res: Response) => {
@@ -22,7 +20,7 @@ export class UserController {
         } else{
             try{
                 const allUsers = await userModel.find();
-                await Promise.all(allUsers?.map(async (value: any, index: any) => {
+                await Promise.all(allUsers?.map(async (value: any) => {
                     const user = {
                         id: value._id,
                         username: value.username,
@@ -170,10 +168,6 @@ export class UserController {
             return res.status(StatusCode.E400).json(new Error(Message.NoPermit, StatusCode.E500, Message.NoPermit))
         }
         return res.status(200).json(new Error(users, StatusCode.E200, Message.OK));
-    }
-
-    // send verify code by email
-    static sendVerifyCode = async (req: Request, res: Response) => {
     }
 
     static registerUser = async (req: Request, res: Response) => {

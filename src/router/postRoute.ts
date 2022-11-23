@@ -20,6 +20,7 @@ postRouter.post('/like/:postId', verifyUser, PostController.likePost)
 postRouter.post('/dislike/:postId', verifyUser, PostController.dislikePost)
 
 postRouter.post('/comment/:postId', verifyUser, PostController.commentPost)
+
 postRouter.post('/deleteComment', verifyUser, PostController.deleteCommentPost)
 
 export default postRouter

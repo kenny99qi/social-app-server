@@ -29,7 +29,7 @@ export class FollowController {
     static unfollow = async (req: CustomRequest, res: Response) => {
         let following: any
         if (req.userWithJwt) {
-            const {email, isStaff, id} = req.userWithJwt as JwtPayload
+            const {id} = req.userWithJwt as JwtPayload
                 try {
                     const rawFollowings = await followModel.findOne({userId: id})
                     const newFollowing = rawFollowings.following.filter((value: any) => value !== req.body.useId)
@@ -56,7 +56,7 @@ export class FollowController {
     static follow = async (req: CustomRequest, res: Response) => {
         let following: any
         if(req.userWithJwt) {
-            const {email, isStaff, id} = req.userWithJwt as JwtPayload
+            const {id} = req.userWithJwt as JwtPayload
             try {
                 const checkFollow = await followModel.findOne({
                     userId: id,
@@ -190,7 +190,7 @@ export class FollowController {
                 const rawFollowings = await followModel.findOne({userId: id})
                 const users:any[] = []
                 const allUsers = await userModel.find();
-                await Promise.all(allUsers?.map(async (value: any, index: any) => {
+                await Promise.all(allUsers?.map(async (value: any) => {
                     const user = {
                         id: value._id,
                         username: value.username,

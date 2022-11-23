@@ -1,7 +1,6 @@
 import {Response} from 'express'
 import Error, {Message, StatusCode} from "../util/Error";
 import {CustomRequest, JwtPayload} from "../middleware/auth/AuthMiddleware";
-import bcrypt from "bcrypt";
 const activityModel = require('../models/activity')
 
 require('dotenv').config()
