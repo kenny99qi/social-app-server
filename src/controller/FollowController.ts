@@ -70,8 +70,8 @@ export class FollowController {
                 const checkFollow = await followModel.findOne({
                     userId: id,
                 })
-                const checkUserValid = await followModel.findOne({
-                    userId: req.body.userId
+                const checkUserValid = await userModel.findOne({
+                    _id: req.body.userId
                 })
                 if (checkUserValid) {
                     if (checkFollow) {
@@ -181,7 +181,7 @@ export class FollowController {
                         }
                     }
                 } else {
-                    return res.status(StatusCode.E400).json(new Error("User does not exist!", StatusCode.E400, Message.ErrCreate))
+                    return res.status(StatusCode.E400).json(new Error("User not found!", StatusCode.E400, Message.ErrCreate))
                 }
 
             } catch (e) {

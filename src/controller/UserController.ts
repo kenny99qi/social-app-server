@@ -227,7 +227,7 @@ export class UserController {
         })
     }
 
-    static getUserInfo = async (req: CustomRequest, res: Response) => {
+    static getCurrentUserInfo = async (req: CustomRequest, res: Response) => {
         let user: any
         if(req.userWithJwt) {try {
             user = await userModel.findOne({
@@ -236,6 +236,23 @@ export class UserController {
         } catch (e) {
             return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
         }}
+        return res.status(StatusCode.E200).send(new Error(user, StatusCode.E200, Message.OK))
+    }
+
+    static getOneUser = async (req: CustomRequest, res: Response) => {
+        let user: any
+        if(req.userWithJwt?.isStaff){
+            try {
+                user = await userModel.findOne({
+                    _id: req.params.id,
+                })
+            } catch (e) {
+                return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
+            }
+        } else {
+            return res.status(StatusCode.E400).json(new Error(Message.NoPermit, StatusCode.E500, Message.NoPermit))
+        }
+
         return res.status(StatusCode.E200).send(new Error(user, StatusCode.E200, Message.OK))
     }
 }
