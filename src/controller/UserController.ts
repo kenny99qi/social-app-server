@@ -241,28 +241,53 @@ export class UserController {
 
     static getOneUser = async (req: CustomRequest, res: Response) => {
         let user: any
-        if(req.userWithJwt?.isStaff){
-            try {
-                user = await userModel.findOne({
-                    username: req.params.id,
-                })
-                if (!user) {
+        if(req.userWithJwt) {
+            if(req.userWithJwt?.isStaff){
+                try {
                     user = await userModel.findOne({
-                        email: req.params.id,
+                        username: req.params.id,
                     })
-                    if(!user){
+                    if (!user) {
                         user = await userModel.findOne({
-                            _id: req.params.id,
+                            email: req.params.id,
                         })
+                        if(!user){
+                            user = await userModel.findOne({
+                                _id: req.params.id,
+                            })
+                        }
                     }
+                } catch (e) {
+                    return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
                 }
-            } catch (e) {
-                return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
+            } else {
+                try {
+                    let rawUser = await userModel.findOne({
+                        username: req.params.id,
+                    })
+                    if (!rawUser) {
+                        rawUser = await userModel.findOne({
+                            email: req.params.id,
+                        })
+                        if(!rawUser){
+                            rawUser = await userModel.findOne({
+                                _id: req.params.id,
+                            })
+                        }
+                    }
+                    user = {
+                        _id: rawUser._id,
+                        email: rawUser.email,
+                        username: rawUser.username,
+                        avatar: rawUser.avatar,
+                    }
+                } catch (e) {
+                    return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
+                }
             }
         } else {
-            return res.status(StatusCode.E400).json(new Error(Message.NoPermit, StatusCode.E500, Message.NoPermit))
+            return res.status(StatusCode.E400).json(new Error(Message.NoAuth, StatusCode.E500, Message.NoAuth))
         }
-
         return res.status(StatusCode.E200).send(new Error(user, StatusCode.E200, Message.OK))
     }
 }
