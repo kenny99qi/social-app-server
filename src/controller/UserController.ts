@@ -244,15 +244,15 @@ export class UserController {
         if(req.userWithJwt?.isStaff){
             try {
                 user = await userModel.findOne({
-                    _id: req.params.id,
+                    username: req.params.id,
                 })
                 if (!user) {
                     user = await userModel.findOne({
-                        username: req.params.id,
+                        email: req.params.id,
                     })
                     if(!user){
                         user = await userModel.findOne({
-                            email: req.params.id,
+                            _id: req.params.id,
                         })
                     }
                 }
