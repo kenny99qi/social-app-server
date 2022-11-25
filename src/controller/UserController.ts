@@ -246,6 +246,16 @@ export class UserController {
                 user = await userModel.findOne({
                     _id: req.params.id,
                 })
+                if (!user) {
+                    user = await userModel.findOne({
+                        username: req.params.id,
+                    })
+                    if(!user){
+                        user = await userModel.findOne({
+                            email: req.params.id,
+                        })
+                    }
+                }
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
