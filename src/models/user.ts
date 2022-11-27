@@ -20,6 +20,22 @@ const UserSchema = new Schema({
         type: String,
         required: true,
     },
+    cover:{
+        type: String,
+    },
+    bio: {
+        type: String,
+    },
+    location: {
+        type: String,
+    },
+    website: {
+        type: String,
+    },
+    status: {
+        type: String,
+        enum: ['online', 'offline', 'invisible', 'busy', 'away'],
+    },
     isStaff: {
         type: Boolean,
     },
