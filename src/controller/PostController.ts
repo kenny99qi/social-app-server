@@ -19,7 +19,7 @@ export class PostController {
         } else{
                 return res.status(StatusCode.E500).json(new Error(Message.ErrFind, StatusCode.E500, Message.ErrFind))
         }
-        return res.status(200).json(new Error(posts, StatusCode.E200, Message.OK));
+        return res.status(200).json(new Error(posts.reverse(), StatusCode.E200, Message.OK));
     }
 
     static getUserPosts = async (req: CustomRequest, res: Response) => {
