@@ -12,7 +12,23 @@ export class PostController {
         let posts: any[] = []
         if(req.userWithJwt) {
             try{
-                posts = await postModel.find();
+                const rawPosts = await postModel.find();
+                await Promise.all(rawPosts.map(async (post: any) => {
+                    try{
+                        const user = await userModel.findOne({_id: post.userId})
+                        post = {
+                            ...post._doc,
+                            user: {
+                                username: user.username,
+                                avatar: user.avatar
+                            }
+                        }
+                        console.log(post)
+                        posts.push(post)
+                    } catch (e) {
+                        console.log(e)
+                    }
+                }))
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
