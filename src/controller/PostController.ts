@@ -1,6 +1,7 @@
 import {Response} from 'express'
 import Error, {Message, StatusCode} from "../util/Error";
 import {CustomRequest, JwtPayload} from "../middleware/auth/AuthMiddleware";
+import {ActivityEnum} from "../util/enum/ActivityEnum";
 const postModel = require('../models/post')
 const userModel = require('../models/user')
 const activityModel = require('../models/activity')
@@ -83,9 +84,7 @@ export class PostController {
                 const user = await userModel.findOne({_id: id})
                 const activityRecord = await activityModel({
                     userId: user._id,
-                    username: user.username,
-                    avatar: user.avatar,
-                    activities: 'likePost',
+                    activities: ActivityEnum.Liked_a_Post,
                     createdAt: new Date(),
                 })
                 await activityRecord.save()
@@ -108,9 +107,7 @@ export class PostController {
                 const user = await userModel.findOne({_id: id})
                 const activityRecord = await activityModel({
                     userId: user._id,
-                    username: user.username,
-                    avatar: user.avatar,
-                    activities: 'unlikePost',
+                    activities: ActivityEnum.Unliked_a_Post,
                     createdAt: new Date(),
                 })
                 await activityRecord.save()
@@ -139,9 +136,7 @@ export class PostController {
                 const user = await userModel.findOne({_id: id})
                 const activityRecord = await activityModel({
                     userId: user._id,
-                    username: user.username,
-                    avatar: user.avatar,
-                    activities: 'commentPost',
+                    activities: ActivityEnum.Commented_a_Post,
                     createdAt: new Date(),
                 })
                 await activityRecord.save()
@@ -170,9 +165,7 @@ export class PostController {
                 const user = await userModel.findOne({_id: id})
                 const activityRecord = await activityModel({
                     userId: user._id,
-                    username: user.username,
-                    avatar: user.avatar,
-                    activities: 'deleteCommentPost',
+                    activities: ActivityEnum.Deleted_a_Comment_of_a_Post,
                     createdAt: new Date(),
                 })
                 await activityRecord.save()
@@ -231,9 +224,7 @@ export class PostController {
                 const user = await userModel.findOne({_id: id})
                 const activityRecord = await activityModel({
                     userId: user._id,
-                    username: user.username,
-                    avatar: user.avatar,
-                    activities: 'createPost',
+                    activities: ActivityEnum.Created_a_Post,
                     createdAt: new Date(),
                 })
                 await activityRecord.save()
@@ -270,9 +261,7 @@ export class PostController {
                 const user = await userModel.findOne({_id: id})
                 const activityRecord = await activityModel({
                     userId: user._id,
-                    username: user.username,
-                    avatar: user.avatar,
-                    activities: 'updatePost',
+                    activities: ActivityEnum.Edited_a_Post,
                     createdAt: new Date(),
                 })
                 await activityRecord.save()
@@ -302,9 +291,7 @@ export class PostController {
                 const user = await userModel.findOne({_id: id})
                 const activityRecord = await activityModel({
                     userId: user._id,
-                    username: user.username,
-                    avatar: user.avatar,
-                    activities: 'deletePost',
+                    activities: ActivityEnum.Deleted_a_Post,
                     createdAt: new Date(),
                 })
                 await activityRecord.save()

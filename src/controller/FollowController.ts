@@ -1,6 +1,7 @@
 import {Response} from 'express'
 import Error, {Message, StatusCode} from "../util/Error";
 import {CustomRequest, JwtPayload} from "../middleware/auth/AuthMiddleware";
+import {ActivityEnum} from "../util/enum/ActivityEnum";
 const followModel = require('../models/follow')
 const userModel = require('../models/user')
 const activityModel = require('../models/activity')
@@ -49,9 +50,7 @@ export class FollowController {
                     const user = await userModel.findOne({_id: id})
                     const activityRecord = await activityModel({
                         userId: user._id,
-                        username: user.username,
-                        avatar: user.avatar,
-                        activities: 'unfollow',
+                        activities: ActivityEnum.Unfollowed_a_Following,
                         createdAt: new Date(),
                     })
                     await activityRecord.save()
@@ -87,9 +86,7 @@ export class FollowController {
                         const user = await userModel.findOne({_id: id})
                         const activityRecord = await activityModel({
                             userId: user._id,
-                            username: user.username,
-                            avatar: user.avatar,
-                            activities: 'newfollowing',
+                            activities: ActivityEnum.Had_a_New_Following,
                             createdAt: new Date(),
                         })
                         await activityRecord.save()
@@ -105,9 +102,7 @@ export class FollowController {
                             const user = await userModel.findOne({_id: req.body.userId})
                             const activityRecord = await activityModel({
                                 userId: user._id,
-                                username: user.username,
-                                avatar: user.avatar,
-                                activities: 'newfollower',
+                                activities: ActivityEnum.Had_a_New_Follower,
                                 createdAt: new Date(),
                             })
                             await activityRecord.save()
@@ -121,9 +116,7 @@ export class FollowController {
                             const user = await userModel.findOne({_id: req.body.userId})
                             const activityRecord = await activityModel({
                                 userId: user._id,
-                                username: user.username,
-                                avatar: user.avatar,
-                                activities: 'newfollower',
+                                activities: ActivityEnum.Had_a_New_Follower,
                                 createdAt: new Date(),
                             })
                             await activityRecord.save()
@@ -138,9 +131,7 @@ export class FollowController {
                         const user = await userModel.findOne({_id: id})
                         const activityRecord = await activityModel({
                             userId: user._id,
-                            username: user.username,
-                            avatar: user.avatar,
-                            activities: 'newfollowing',
+                            activities: ActivityEnum.Had_a_New_Following,
                             createdAt: new Date(),
                         })
                         await activityRecord.save()
@@ -156,9 +147,7 @@ export class FollowController {
                             const user = await userModel.findOne({_id: req.body.userId})
                             const activityRecord = await activityModel({
                                 userId: user._id,
-                                username: user.username,
-                                avatar: user.avatar,
-                                activities: 'newfollower',
+                                activities: ActivityEnum.Had_a_New_Follower,
                                 createdAt: new Date(),
                             })
                             await activityRecord.save()
@@ -172,9 +161,7 @@ export class FollowController {
                             const user = await userModel.findOne({_id: req.body.userId})
                             const activityRecord = await activityModel({
                                 userId: user._id,
-                                username: user.username,
-                                avatar: user.avatar,
-                                activities: 'newfollower',
+                                activities: ActivityEnum.Had_a_New_Follower,
                                 createdAt: new Date(),
                             })
                             await activityRecord.save()

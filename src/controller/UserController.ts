@@ -3,6 +3,7 @@ import Error, {Message, StatusCode} from "../util/Error";
 import {CustomRequest, JwtPayload} from "../middleware/auth/AuthMiddleware";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import {ActivityEnum} from "../util/enum/ActivityEnum";
 const userModel = require('../models/user')
 const activityModel = require('../models/activity')
 
@@ -68,9 +69,7 @@ export class UserController {
                 lastLogin = await userModel.findOne({email:req.body.email})
                 const activityRecord = await activityModel({
                     userId: id,
-                    username: user.username,
-                    avatar: user.avatar,
-                    activities: 'login',
+                    activities: ActivityEnum.Logged_In,
                     createdAt: new Date(),
                 })
                 await activityRecord.save()
@@ -105,9 +104,7 @@ export class UserController {
                         users = await userModel.findOne({_id: req.body.id})
                         const activityRecord = await activityModel({
                             userId: req.body.id,
-                            username: users.username,
-                            avatar: users.avatar,
-                            activities: 'updateUserInfo',
+                            activities: ActivityEnum.Updated_User_Info,
                             createdAt: new Date(),
                         })
                         await activityRecord.save()
@@ -129,9 +126,7 @@ export class UserController {
                         users = await userModel.findOne({_id: id})
                         const activityRecord = await activityModel({
                             userId: id,
-                            username: users.username,
-                            avatar: users.avatar,
-                            activities: 'updateUserInfo',
+                            activities: ActivityEnum.Updated_User_Info,
                             createdAt: new Date(),
                         })
                         await activityRecord.save()
@@ -154,9 +149,7 @@ export class UserController {
                     users = await userModel.findOne({_id: id})
                     const activityRecord = await activityModel({
                         userId: id,
-                        username: users.username,
-                        avatar: users.avatar,
-                        activities: 'updateUserInfo',
+                        activities: ActivityEnum.Updated_User_Info,
                         createdAt: new Date(),
                     })
                     await activityRecord.save()
@@ -188,9 +181,7 @@ export class UserController {
             const users = await userModel.findOne({email: req.body.email})
             const activityRecord = await activityModel({
                 userId: users._id,
-                username: users.username,
-                avatar: users.avatar,
-                activities: 'register',
+                activities: ActivityEnum.Registered,
                 createdAt: new Date(),
             })
             await activityRecord.save()
@@ -209,8 +200,6 @@ export class UserController {
                 const user = await userModel.findOne({_id: id})
                 const activityRecord = await activityModel({
                     userId: user._id,
-                    username: user.username,
-                    avatar: user.avatar,
                     activities: 'logout',
                     createdAt: new Date(),
                 })
