@@ -24,12 +24,15 @@ export class ActivityController {
                         }
                         activities.push(activity)
                     }))
+                    activities = activities.sort((a, b) => {
+                        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                    })
                 } catch (e) {
                     return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
                 }
         } else{
             return res.status(StatusCode.E400).json(new Error(Message.NoAuth, StatusCode.E400, Message.NoAuth))
         }
-        return res.status(200).json(new Error(activities.reverse(), StatusCode.E200, Message.OK));
+        return res.status(200).json(new Error(activities, StatusCode.E200, Message.OK));
     }
 }

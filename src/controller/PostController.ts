@@ -24,7 +24,6 @@ export class PostController {
                                 avatar: user.avatar
                             }
                         }
-                        console.log(post)
                         posts.push(post)
                     } catch (e) {
                         console.log(e)
