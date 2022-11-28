@@ -11,7 +11,6 @@ export class ActivityController {
         let activities: any[] = []
         if (req.userWithJwt) {
             const {id} = req.userWithJwt as JwtPayload
-            // if(req.userWithJwt?.isStaff) {
                 try{
                     const rawActivities = await activityModel.find();
                     await Promise.all(rawActivities.map(async (activity: any) => {
@@ -28,16 +27,9 @@ export class ActivityController {
                 } catch (e) {
                     return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
                 }
-            // } else{
-            //     try{
-            //         activities = await activityModel.find({userId: id});
-            //     } catch (e) {
-            //         return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
-            //     }
-            // }
         } else{
             return res.status(StatusCode.E400).json(new Error(Message.NoAuth, StatusCode.E400, Message.NoAuth))
         }
-        return res.status(200).json(new Error(activities, StatusCode.E200, Message.OK));
+        return res.status(200).json(new Error(activities.reverse(), StatusCode.E200, Message.OK));
     }
 }
