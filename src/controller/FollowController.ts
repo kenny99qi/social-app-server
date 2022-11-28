@@ -243,7 +243,8 @@ export class FollowController {
                     await Promise.all(users?.map(async (value: any) => {
                         const userId = value.id.valueOf()
                         const duplicate = rawFollowings.following.filter((value: any) => value === userId)
-                        if (duplicate.length === 0 && userId !== id) {
+                        const duplicate2 = rawFollowings.dislike.filter((value: any) => value === userId)
+                        if (duplicate.length === 0 && duplicate2.length === 0 && userId !== id) {
                             suggestions.push(value)
                         }
                     }))
