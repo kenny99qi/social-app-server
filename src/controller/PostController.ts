@@ -158,7 +158,7 @@ export class PostController {
                             _id: comment.userId
                         })
                         comment = {
-                            ...comment,
+                            ...comment._doc,
                             user: {
                                 username: user.username,
                                 avatar: user.avatar
