@@ -21,6 +21,8 @@ postRouter.post('/dislike/:postId', verifyUser, PostController.dislikePost)
 
 postRouter.post('/comment/:postId', verifyUser, PostController.commentPost)
 
+postRouter.get('/comment/:postId', verifyUser, PostController.getCommentsOfPost)
+
 postRouter.post('/deleteComment', verifyUser, PostController.deleteCommentPost)
 
 export default postRouter

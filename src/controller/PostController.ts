@@ -147,6 +147,35 @@ export class PostController {
         return res.status(200).json(new Error(post, StatusCode.E200, Message.OK));
     }
 
+    static getCommentsOfPost = async (req: CustomRequest, res: Response) => {
+        let comments: any[] = []
+        if (req.userWithJwt) {
+            try {
+                const rawComments = await postModel.findOne({_id: req.params.postId});
+                await Promise.all(rawComments?.interaction.comments.map(async (comment: any) => {
+                    try {
+                        const user = await userModel.findOne({
+                            _id: comment.userId
+                        })
+                        comment = {
+                            ...comment,
+                            user: {
+                                username: user.username,
+                                avatar: user.avatar
+                            }
+                        }
+                        comments.push(comment)
+                    } catch (e) {
+                        console.log(e)
+                    }
+                }))
+            } catch (e) {
+                return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
+            }
+        }
+        return res.status(200).json(new Error(comments, StatusCode.E200, Message.OK));
+    }
+
     static deleteCommentPost = async (req: CustomRequest, res: Response) => {
         let post: any
         if(req.userWithJwt) {
