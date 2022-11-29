@@ -139,7 +139,6 @@ export class UserController {
                     return res.status(StatusCode.E400).json(new Error(Message.NoPermit, StatusCode.E500, Message.NoPermit))
                 }
                 try {
-                    console.log("id", id)
                     users = await userModel.findOneAndUpdate({_id: id}, {
                         "email": req.body.email,
                         "password": req.body.password,

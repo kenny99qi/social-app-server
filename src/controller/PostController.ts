@@ -53,7 +53,6 @@ export class PostController {
                                 avatar: user.avatar
                             }
                         }
-                        console.log(post)
                         posts.push(post)
                     } catch (e) {
                         console.log(e)
@@ -154,7 +153,6 @@ export class PostController {
             const {id} = req.userWithJwt as JwtPayload
             try{
                 const check = await postModel.findOne({_id: req.body.postId, "interaction.comments.userId": id});
-                console.log(check)
                 if(check.userId !== id){
                     return res.status(StatusCode.E500).json(new Error(Message.NoAuth, StatusCode.E500, Message.NoAuth))
                 }
