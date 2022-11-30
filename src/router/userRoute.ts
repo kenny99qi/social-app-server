@@ -14,6 +14,8 @@ userRouter.post('/auth/login', UserController.loginUser)
 // refresh token
 userRouter.post('/auth/update', verifyUser, UserController.updateUser)
 
+userRouter.post('/auth/checkPassword', verifyUser, UserController.checkPassword)
+
 // register user
 userRouter.post('/auth/register', UserController.registerUser)
 

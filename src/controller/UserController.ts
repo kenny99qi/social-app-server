@@ -91,10 +91,14 @@ export class UserController {
             if (isStaff) {
                 // update other user's info
                 if (req.body.id) {
+                    let password:any;
+                    if(req.body.password) {
+                        password = await bcrypt.hash(req?.body?.password, 10)
+                    }
                     try {
                         users = await userModel.findOneAndUpdate({_id: req.body.id}, {
                             "email": req.body.email,
-                            "password": req.body.password,
+                            "password": password,
                             "username": req.body.username,
                             "avatar": req.body.avatar,
                             "isStaff": req.body.isStaff,
@@ -277,5 +281,25 @@ export class UserController {
             return res.status(StatusCode.E400).json(new Error(Message.NoAuth, StatusCode.E500, Message.NoAuth))
         }
         return res.status(StatusCode.E200).send(new Error(user, StatusCode.E200, Message.OK))
+    }
+
+    static checkPassword = async (req: CustomRequest, res: Response) => {
+        let user: any
+        if(req.userWithJwt) {
+            try {
+                user = await userModel.findOne({
+                    _id: req.userWithJwt.id,
+                })
+                const isMatch = await bcrypt.compare(req.body.password, user.password)
+                if(!isMatch){
+                    return res.status(StatusCode.E400).json(new Error(Message.WrongPassword, StatusCode.E400, Message.WrongPassword))
+                }
+            } catch (e) {
+                return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
+            }
+        } else {
+            return res.status(StatusCode.E400).json(new Error(Message.NoAuth, StatusCode.E500, Message.NoAuth))
+        }
+        return res.status(StatusCode.E200).send(new Error(Message.OK, StatusCode.E200, Message.OK))
     }
 }

@@ -14,6 +14,7 @@ export enum Message {
     ErrDuplicate = 'Duplicate record in the database',
     ErrUpdate = 'Cannot update record in the database',
     ErrParams = 'Necessary params NOT provided',
+    WrongPassword = 'Wrong password',
     ErrToken = 'Token is NOT valid',
     NoAuth = 'Your are not authenticated',
     NoPermit = 'You do NOT have permission to do this',
