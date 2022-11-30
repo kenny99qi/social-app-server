@@ -101,6 +101,11 @@ export class UserController {
                             "password": password,
                             "username": req.body.username,
                             "avatar": req.body.avatar,
+                            "cover": req.body.cover,
+                            "bio": req.body.bio,
+                            "location": req.body.location,
+                            "website": req.body.website,
+                            "status": req.body.status,
                             "isStaff": req.body.isStaff,
                             "isVerified": req.body.isVerified,
                             "isActive": req.body.isActive
@@ -123,6 +128,11 @@ export class UserController {
                             "password": req.body.password,
                             "username": req.body.username,
                             "avatar": req.body.avatar,
+                            "cover": req.body.cover,
+                            "bio": req.body.bio,
+                            "location": req.body.location,
+                            "website": req.body.website,
+                            "status": req.body.status,
                             "isStaff": req.body.isStaff,
                             "isVerified": req.body.isVerified,
                             "isActive": req.body.isActive
@@ -148,6 +158,11 @@ export class UserController {
                         "password": req.body.password,
                         "username": req.body.username,
                         "avatar": req.body.avatar,
+                        "cover": req.body.cover,
+                        "bio": req.body.bio,
+                        "location": req.body.location,
+                        "website": req.body.website,
+                        "status": req.body.status,
                     });
                     users = await userModel.findOne({_id: id})
                     const activityRecord = await activityModel({
