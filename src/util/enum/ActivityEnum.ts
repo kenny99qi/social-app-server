@@ -18,7 +18,7 @@ export enum ActivityEnum {
     Edited_a_Story = 'Edited a Story',
     Deleted_a_Story = 'Deleted a Story',
     Liked_a_Story = 'Liked a Story',
-    Unlike_a_Story = 'Unlike a Story',
+    Unliked_a_Story = 'Unliked a Story',
     Commented_a_Story = 'Commented a Story',
-    Delete_a_Comment_of_a_Story = 'Delete a Comment of a Story',
+    Deleted_a_Comment_of_a_Story = 'Deleted a Comment of a Story',
 }
