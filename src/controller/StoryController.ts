@@ -4,6 +4,7 @@ import {CustomRequest, JwtPayload} from "../middleware/auth/AuthMiddleware";
 import {ActivityEnum} from "../util/enum/ActivityEnum";
 import getOrSetRedisCache from "../util/getOrSetRedisCache";
 import {Ttl} from "../util/Ttl";
+
 const storyModel = require('../models/story')
 const userModel = require('../models/user')
 const activityModel = require('../models/activity')
@@ -50,23 +51,21 @@ export class StoryController {
             try{
                 stories = await getOrSetRedisCache(`all_stories:${req.params.pageNumber}`, Ttl.TenMinute, async () => {
                     let pageNumber = req?.params?.pageNumber ? parseInt(req.params.pageNumber as string) : 1
-                    const rawStories = await storyModel.find({}).skip((pageNumber - 1) * pageSizes).limit(pageSizes).sort({createdAt: -1});
-                    await Promise.all(rawStories.map(async (post: any) => {
-                        try{
-                            const user = await userModel.findOne({_id: post.userId})
-                            post = {
-                                ...post._doc,
-                                user: {
-                                    username: user.username,
-                                    avatar: user.avatar
-                                }
+                    const rawStories = await storyModel.find({}).skip((pageNumber - 1) * pageSizes).limit(pageSizes).sort({'status.createdAt': -1});
+                    const getUserInfo = async (rawStories: any) => {
+                        return await Promise.all(rawStories.map(async (post: any) => {
+                            try {
+                                return await userModel.findOne({_id: post.userId})
+                            } catch (e) {
+                                console.log(e)
                             }
-                            stories.push(post)
-                        } catch (e) {
-                            console.log(e)
-                        }
+                        }))
+                    };
+                    const users:any = await getUserInfo(rawStories)
+                    return rawStories.map((post: any, i: any) => ({
+                        post,
+                        user: users[i]
                     }))
-                    return stories
                 })
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))

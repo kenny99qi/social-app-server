@@ -49,9 +49,9 @@ export class PostController {
         let pageSizes = 10
         if(req.userWithJwt) {
             try{
-                posts = await getOrSetRedisCache(`all_posts:${req.params.pageNumber}`, Ttl.TenMinute, async () => {
+                posts = await getOrSetRedisCache(`all_posts:${req.params.pageNumber}`, 10, async () => {
                     let pageNumber = req?.params?.pageNumber ? parseInt(req.params.pageNumber as string) : 1
-                    const rawPosts = await postModel.find({}).skip((pageNumber - 1) * pageSizes).limit(pageSizes).sort({createdAt: -1});
+                    const rawPosts = await postModel.find({}).skip((pageNumber - 1) * pageSizes).limit(pageSizes).sort({"status.createdAt": -1});
                     await Promise.all(rawPosts.map(async (post: any) => {
                         try{
                             const user = await userModel.findOne({_id: post.userId})
