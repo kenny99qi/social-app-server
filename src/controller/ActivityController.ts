@@ -16,18 +16,20 @@ export class ActivityController {
                 try{
                     activities = await getOrSetRedisCache(`all_activities:${id}`, Ttl.OneMinute, async () => {
                         const rawActivities = await activityModel.find().limit(10).sort({createdAt: -1});
-                        await Promise.all(rawActivities.map(async (activity: any) => {
-                            const user = await userModel.findOne({_id: activity.userId})
-                            activity = {
-                                ...activity._doc,
-                                user: {
-                                    username: user.username,
-                                    avatar: user.avatar,
+                        const getUserInfo = async (rawActivities: any) => {
+                            return await Promise.all(rawActivities.map(async (activity: any) => {
+                                try {
+                                    return await userModel.findOne({_id: activity.userId})
+                                } catch (e) {
+                                    console.log(e)
                                 }
-                            }
-                            activities.push(activity)
+                            }))
+                        };
+                        const users:any = await getUserInfo(rawActivities)
+                        return rawActivities.map((post: any, i: any) => ({
+                            ...post._doc,
+                            user: users[i]
                         }))
-                        return activities
                     })
                 } catch (e) {
                     return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
