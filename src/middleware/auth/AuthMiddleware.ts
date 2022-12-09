@@ -18,11 +18,11 @@ export const verifyUser = async (req: CustomRequest, res: Response, next: NextFu
     // get the token from request headers
     const authHeader = req.headers.authorization
 
-    if(req.user) {
-        // if user login with oAuth
-        next()
-        return
-    }
+    // if(req.user) {
+    //     // if user login with oAuth
+    //     next()
+    //     return
+    // }
 
     if (authHeader) {
         // if user login with JWT

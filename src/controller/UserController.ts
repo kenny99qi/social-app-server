@@ -4,10 +4,14 @@ import {CustomRequest, JwtPayload} from "../middleware/auth/AuthMiddleware";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import {ActivityEnum} from "../util/enum/ActivityEnum";
+import getOrSetRedisCache from "../util/getOrSetRedisCache";
+
 const userModel = require('../models/user')
 const activityModel = require('../models/activity')
 
 require('dotenv').config()
+
+const ttl = 60 * 60 * 24
 
 export class UserController {
     static getAllUsers = async (req: CustomRequest, res: Response) => {
@@ -236,13 +240,17 @@ export class UserController {
 
     static getCurrentUserInfo = async (req: CustomRequest, res: Response) => {
         let user: any
-        if(req.userWithJwt) {try {
-            user = await userModel.findOne({
-                email: req.userWithJwt.email,
+        if (req.userWithJwt) {
+            try {
+                user = await getOrSetRedisCache(`current_user_info_${req.userWithJwt.id}`, ttl, async () => {
+                    return await userModel.findOne({
+                    _id: req?.userWithJwt?.id,
+                });
             });
-        } catch (e) {
-            return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
-        }}
+            } catch (e) {
+                return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
+            }
+        }
         return res.status(StatusCode.E200).send(new Error(user, StatusCode.E200, Message.OK))
     }
 
