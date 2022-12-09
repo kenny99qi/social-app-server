@@ -5,9 +5,9 @@ import {DashboardController} from "../controller/DashboardController";
 
 const dashboardRouter = Router()
 
-dashboardRouter.get('/users', verifyUser, DashboardController.getAllUsers)
-dashboardRouter.get('/activities', verifyUser, DashboardController.getAllActivities)
-dashboardRouter.get('/posts', verifyUser, DashboardController.getAllPosts)
+dashboardRouter.get('/users', verifyUser, DashboardController.countAllUsers)
+dashboardRouter.get('/activities', verifyUser, DashboardController.countAllActivities)
+dashboardRouter.get('/posts', verifyUser, DashboardController.countAllPosts)
 
 dashboardRouter.get('/tasks', verifyUser, DashboardController.getAllTasks)
 dashboardRouter.post('/tasks', verifyUser, DashboardController.createTask)

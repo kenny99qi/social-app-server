@@ -1,6 +1,8 @@
 import {Response} from 'express'
 import Error, {Message, StatusCode} from "../util/Error";
 import {CustomRequest, JwtPayload} from "../middleware/auth/AuthMiddleware";
+import getOrSetRedisCache from "../util/getOrSetRedisCache";
+import {Ttl} from "../util/Ttl";
 const activityModel = require('../models/activity')
 const userModel = require('../models/user')
 const dashboardModel = require('../models/dashboard')
@@ -9,12 +11,14 @@ const postModel = require('../models/post')
 require('dotenv').config()
 
 export class DashboardController {
-    static getAllActivities = async (req: CustomRequest, res: Response) => {
+    static countAllActivities = async (req: CustomRequest, res: Response) => {
         let activities: any
         if (req.userWithJwt?.isStaff) {
             const {id} = req.userWithJwt as JwtPayload
             try{
-                activities = await activityModel.estimatedDocumentCount();
+                activities = await getOrSetRedisCache(`count_all_activities`, Ttl.OneMinute,async () => {
+                    return await activityModel.estimatedDocumentCount();
+                })
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
@@ -24,12 +28,14 @@ export class DashboardController {
         return res.status(200).json(new Error(activities, StatusCode.E200, Message.OK));
     }
 
-    static getAllUsers = async (req: CustomRequest, res: Response) => {
+    static countAllUsers = async (req: CustomRequest, res: Response) => {
         let users: any
         if (req.userWithJwt?.isStaff) {
             const {id} = req.userWithJwt as JwtPayload
             try{
-                users = await userModel.estimatedDocumentCount();
+                users = await getOrSetRedisCache(`count_all_users`, Ttl.OneMinute,async () => {
+                    return await userModel.estimatedDocumentCount();
+                })
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
@@ -39,12 +45,14 @@ export class DashboardController {
         return res.status(200).json(new Error(users, StatusCode.E200, Message.OK));
     }
 
-    static getAllPosts = async (req: CustomRequest, res: Response) => {
+    static countAllPosts = async (req: CustomRequest, res: Response) => {
         let posts: any
         if (req.userWithJwt?.isStaff) {
             const {id} = req.userWithJwt as JwtPayload
             try{
-                posts = await postModel.estimatedDocumentCount();
+                posts = await getOrSetRedisCache(`count_all_posts`, Ttl.OneMinute,async () => {
+                    return await postModel.estimatedDocumentCount();
+                })
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
@@ -59,7 +67,9 @@ export class DashboardController {
         if (req.userWithJwt?.isStaff) {
             const {id} = req.userWithJwt as JwtPayload
             try {
-                tasks = await dashboardModel.find({userId: id});
+                tasks = await getOrSetRedisCache(`all_tasks:${id}`, Ttl.OneMinute,async () => {
+                    return await dashboardModel.find({userId: id});
+                })
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }

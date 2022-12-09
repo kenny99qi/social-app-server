@@ -1,11 +1,15 @@
 import { Router } from 'express'
 import {StoryController} from "../controller/StoryController";
 import {verifyUser} from "../middleware/auth/AuthMiddleware";
+import {PostController} from "../controller/PostController";
+import postRouter from "./postRoute";
 
 
 const storyRouter = Router()
 
 storyRouter.get('/all', verifyUser, StoryController.getAllStories)
+
+storyRouter.get('/all/:pageNumber', verifyUser, StoryController.getAllStoriesWithPage)
 
 storyRouter.get('/:userId', verifyUser, StoryController.getUserStories)
 
