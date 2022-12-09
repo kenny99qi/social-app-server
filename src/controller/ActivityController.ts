@@ -27,10 +27,7 @@ export class ActivityController {
                             }
                             activities.push(activity)
                         }))
-                        // activities = activities.sort((a, b) => {
-                        //     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-                        // })
-                        return activities.slice(0, 10)
+                        return activities
                     })
                 } catch (e) {
                     return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))

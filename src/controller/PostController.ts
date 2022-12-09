@@ -14,10 +14,10 @@ require('dotenv').config()
 export class PostController {
     static getAllPosts = async (req: CustomRequest, res: Response) => {
         let posts: any[] = []
-        if(req.userWithJwt?.isStaff) {
+        if(req.userWithJwt) {
             try{
                 posts = await getOrSetRedisCache(`all_posts`, Ttl.OneMinute, async () => {
-                    const rawPosts = await postModel.find();
+                    const rawPosts = await postModel.find({}).sort({createdAt: -1});
                     await Promise.all(rawPosts.map(async (post: any) => {
                         try{
                             const user = await userModel.findOne({_id: post.userId})
@@ -41,7 +41,7 @@ export class PostController {
         } else{
                 return res.status(StatusCode.E500).json(new Error(Message.ErrFind, StatusCode.E500, Message.ErrFind))
         }
-        return res.status(200).json(new Error(posts.reverse(), StatusCode.E200, Message.OK));
+        return res.status(200).json(new Error(posts, StatusCode.E200, Message.OK));
     }
 
     static getAllPostsWithPage = async (req: CustomRequest, res: Response) => {
@@ -75,7 +75,7 @@ export class PostController {
         } else{
             return res.status(StatusCode.E500).json(new Error(Message.ErrFind, StatusCode.E500, Message.ErrFind))
         }
-        return res.status(200).json(new Error(posts.reverse(), StatusCode.E200, Message.OK));
+        return res.status(200).json(new Error(posts, StatusCode.E200, Message.OK));
     }
 
     static getUserPosts = async (req: CustomRequest, res: Response) => {
@@ -83,7 +83,7 @@ export class PostController {
         if(req.userWithJwt) {
             try{
                 posts = await getOrSetRedisCache(`user_posts:${req.params.userId}`, Ttl.HalfHour, async () => {
-                    const rawPosts = await postModel.find({userId: req.params.userId});
+                    const rawPosts = await postModel.find({userId: req.params.userId}).sort({createdAt: -1});
                     const user = await getOrSetRedisCache(`user:${req.params.userId}`, Ttl.HalfHour, async () => {
                         return await userModel.findOne({_id: req.params.userId})
                     })

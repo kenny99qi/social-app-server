@@ -2,6 +2,8 @@ import {Response} from 'express'
 import Error, {Message, StatusCode} from "../util/Error";
 import {CustomRequest, JwtPayload} from "../middleware/auth/AuthMiddleware";
 import {ActivityEnum} from "../util/enum/ActivityEnum";
+import getOrSetRedisCache from "../util/getOrSetRedisCache";
+import {Ttl} from "../util/Ttl";
 const storyModel = require('../models/story')
 const userModel = require('../models/user')
 const activityModel = require('../models/activity')
@@ -10,39 +12,76 @@ require('dotenv').config()
 
 export class StoryController {
     static getAllStories = async (req: CustomRequest, res: Response) => {
-        let posts: any[] = []
-        if(req.userWithJwt) {
+        let stories: any[] = []
+        if(req.userWithJwt?.isStaff) {
             try{
-                const rawStories = await storyModel.find();
-                await Promise.all(rawStories.map(async (story: any) => {
-                    try{
-                        const user = await userModel.findOne({_id: story.userId})
-                        story = {
-                            ...story._doc,
-                            user: {
-                                username: user.username,
-                                avatar: user.avatar
+                stories = await getOrSetRedisCache(`all_stories`, Ttl.OneMinute, async () => {
+                    const rawStories = await storyModel.find({}).sort({createdAt: -1});
+                    await Promise.all(rawStories.map(async (post: any) => {
+                        try{
+                            const user = await userModel.findOne({_id: post.userId})
+                            post = {
+                                ...post._doc,
+                                user: {
+                                    username: user.username,
+                                    avatar: user.avatar
+                                }
                             }
+                            stories.push(post)
+                        } catch (e) {
+                            console.log(e)
                         }
-                        posts.push(story)
-                    } catch (e) {
-                        console.log(e)
-                    }
-                }))
+                    }))
+                    return stories
+                })
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
         } else{
-                return res.status(StatusCode.E500).json(new Error(Message.ErrFind, StatusCode.E500, Message.ErrFind))
+            return res.status(StatusCode.E500).json(new Error(Message.ErrFind, StatusCode.E500, Message.ErrFind))
         }
-        return res.status(200).json(new Error(posts.reverse().slice(0, 5), StatusCode.E200, Message.OK));
+        return res.status(200).json(new Error(stories, StatusCode.E200, Message.OK));
+    }
+
+    static getAllStoriesWithPage = async (req: CustomRequest, res: Response) => {
+        let stories: any[] = []
+        let pageSizes = 5
+        if(req.userWithJwt) {
+            try{
+                stories = await getOrSetRedisCache(`all_stories:${req.params.pageNumber}`, Ttl.TenMinute, async () => {
+                    let pageNumber = req?.params?.pageNumber ? parseInt(req.params.pageNumber as string) : 1
+                    const rawStories = await storyModel.find({}).skip((pageNumber - 1) * pageSizes).limit(pageSizes).sort({createdAt: -1});
+                    await Promise.all(rawStories.map(async (post: any) => {
+                        try{
+                            const user = await userModel.findOne({_id: post.userId})
+                            post = {
+                                ...post._doc,
+                                user: {
+                                    username: user.username,
+                                    avatar: user.avatar
+                                }
+                            }
+                            stories.push(post)
+                        } catch (e) {
+                            console.log(e)
+                        }
+                    }))
+                    return stories
+                })
+            } catch (e) {
+                return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
+            }
+        } else{
+            return res.status(StatusCode.E500).json(new Error(Message.ErrFind, StatusCode.E500, Message.ErrFind))
+        }
+        return res.status(200).json(new Error(stories, StatusCode.E200, Message.OK));
     }
 
     static getUserStories = async (req: CustomRequest, res: Response) => {
-        let posts: any[] = []
+        let stories: any[] = []
         if(req.userWithJwt) {
             try{
-                const rawStories = await storyModel.find({userId: req.params.userId});
+                const rawStories = await storyModel.find({userId: req.params.userId}).sort({createdAt: -1});
                 await Promise.all(rawStories.map(async (story: any) => {
                     try{
                         const user = await userModel.findOne({_id: story.userId})
@@ -53,7 +92,7 @@ export class StoryController {
                                 avatar: user.avatar
                             }
                         }
-                        posts.push(story)
+                        stories.push(story)
                     } catch (e) {
                         console.log(e)
                     }
@@ -64,7 +103,7 @@ export class StoryController {
         } else{
                 return res.status(StatusCode.E500).json(new Error(Message.ErrFind, StatusCode.E500, Message.ErrFind))
         }
-        return res.status(200).json(new Error(posts, StatusCode.E200, Message.OK));
+        return res.status(200).json(new Error(stories, StatusCode.E200, Message.OK));
     }
 
     static likeStory = async (req: CustomRequest, res: Response) => {
