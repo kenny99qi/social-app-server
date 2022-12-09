@@ -2,6 +2,9 @@ import {Response} from 'express'
 import Error, {Message, StatusCode} from "../util/Error";
 import {CustomRequest, JwtPayload} from "../middleware/auth/AuthMiddleware";
 import {ActivityEnum} from "../util/enum/ActivityEnum";
+import getOrSetRedisCache from "../util/getOrSetRedisCache";
+import {Ttl} from "../util/Ttl";
+import {redisClient} from "../index";
 const postModel = require('../models/post')
 const userModel = require('../models/user')
 const activityModel = require('../models/activity')
@@ -11,24 +14,27 @@ require('dotenv').config()
 export class PostController {
     static getAllPosts = async (req: CustomRequest, res: Response) => {
         let posts: any[] = []
-        if(req.userWithJwt) {
+        if(req.userWithJwt?.isStaff) {
             try{
-                const rawPosts = await postModel.find();
-                await Promise.all(rawPosts.map(async (post: any) => {
-                    try{
-                        const user = await userModel.findOne({_id: post.userId})
-                        post = {
-                            ...post._doc,
-                            user: {
-                                username: user.username,
-                                avatar: user.avatar
+                posts = await getOrSetRedisCache(`all_posts`, Ttl.OneMinute, async () => {
+                    const rawPosts = await postModel.find();
+                    await Promise.all(rawPosts.map(async (post: any) => {
+                        try{
+                            const user = await userModel.findOne({_id: post.userId})
+                            post = {
+                                ...post._doc,
+                                user: {
+                                    username: user.username,
+                                    avatar: user.avatar
+                                }
                             }
+                            posts.push(post)
+                        } catch (e) {
+                            console.log(e)
                         }
-                        posts.push(post)
-                    } catch (e) {
-                        console.log(e)
-                    }
-                }))
+                    }))
+                    return posts
+                })
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
@@ -38,26 +44,65 @@ export class PostController {
         return res.status(200).json(new Error(posts.reverse(), StatusCode.E200, Message.OK));
     }
 
+    static getAllPostsWithPage = async (req: CustomRequest, res: Response) => {
+        let posts: any[] = []
+        let pageSizes = 10
+        if(req.userWithJwt) {
+            try{
+                posts = await getOrSetRedisCache(`all_posts:${req.params.pageNumber}`, Ttl.TenMinute, async () => {
+                    let pageNumber = req?.params?.pageNumber ? parseInt(req.params.pageNumber as string) : 1
+                    const rawPosts = await postModel.find({}).skip((pageNumber - 1) * pageSizes).limit(pageSizes).sort({createdAt: -1});
+                    await Promise.all(rawPosts.map(async (post: any) => {
+                        try{
+                            const user = await userModel.findOne({_id: post.userId})
+                            post = {
+                                ...post._doc,
+                                user: {
+                                    username: user.username,
+                                    avatar: user.avatar
+                                }
+                            }
+                            posts.push(post)
+                        } catch (e) {
+                            console.log(e)
+                        }
+                    }))
+                    return posts
+                })
+            } catch (e) {
+                return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
+            }
+        } else{
+            return res.status(StatusCode.E500).json(new Error(Message.ErrFind, StatusCode.E500, Message.ErrFind))
+        }
+        return res.status(200).json(new Error(posts.reverse(), StatusCode.E200, Message.OK));
+    }
+
     static getUserPosts = async (req: CustomRequest, res: Response) => {
         let posts: any[] = []
         if(req.userWithJwt) {
             try{
-                const rawPosts = await postModel.find({userId: req.params.userId});
-                await Promise.all(rawPosts.map(async (post: any) => {
-                    try{
-                        const user = await userModel.findOne({_id: post.userId})
-                        post = {
-                            ...post._doc,
-                            user: {
-                                username: user.username,
-                                avatar: user.avatar
+                posts = await getOrSetRedisCache(`user_posts:${req.params.userId}`, Ttl.HalfHour, async () => {
+                    const rawPosts = await postModel.find({userId: req.params.userId});
+                    const user = await getOrSetRedisCache(`user:${req.params.userId}`, Ttl.HalfHour, async () => {
+                        return await userModel.findOne({_id: req.params.userId})
+                    })
+                    await Promise.all(rawPosts.map(async (post: any) => {
+                        try{
+                            post = {
+                                ...post._doc,
+                                user: {
+                                    username: user.username,
+                                    avatar: user.avatar
+                                }
                             }
+                            posts.push(post)
+                        } catch (e) {
+                            console.log(e)
                         }
-                        posts.push(post)
-                    } catch (e) {
-                        console.log(e)
-                    }
-                }))
+                    }))
+                    return posts
+                })
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
@@ -138,6 +183,7 @@ export class PostController {
                     createdAt: new Date(),
                 })
                 await activityRecord.save()
+                await redisClient.del(`comments:${req.params.postId}`)
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
@@ -151,24 +197,27 @@ export class PostController {
         let comments: any[] = []
         if (req.userWithJwt) {
             try {
-                const rawComments = await postModel.findOne({_id: req.params.postId});
-                await Promise.all(rawComments?.interaction.comments.map(async (comment: any) => {
-                    try {
-                        const user = await userModel.findOne({
-                            _id: comment.userId
-                        })
-                        comment = {
-                            ...comment._doc,
-                            user: {
-                                username: user.username,
-                                avatar: user.avatar
+                comments = await getOrSetRedisCache(`comments:${req.params.postId}`, Ttl.TenMinute, async () => {
+                    const rawComments = await postModel.findOne({_id: req.params.postId});
+                    await Promise.all(rawComments?.interaction.comments.map(async (comment: any) => {
+                        try {
+                            const user = await userModel.findOne({
+                                _id: comment.userId
+                            })
+                            comment = {
+                                ...comment._doc,
+                                user: {
+                                    username: user.username,
+                                    avatar: user.avatar
+                                }
                             }
+                            comments.push(comment)
+                        } catch (e) {
+                            console.log(e)
                         }
-                        comments.push(comment)
-                    } catch (e) {
-                        console.log(e)
-                    }
-                }))
+                    }))
+                    return comments
+                })
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
@@ -195,6 +244,7 @@ export class PostController {
                     createdAt: new Date(),
                 })
                 await activityRecord.save()
+                await redisClient.del(`comments:${req.body.postId}`)
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
 
@@ -209,15 +259,17 @@ export class PostController {
         let post: any
         if(req.userWithJwt) {
             try{
-                post = await postModel.findOne({_id: req.params.postId});
-                const user = await userModel.findOne({_id: post.userId})
-                post = {
-                    ...post._doc,
-                    user: {
-                        username: user.username,
-                        avatar: user.avatar
+                post = await getOrSetRedisCache(`${req.params.postId}`, Ttl.TenMinute,async () => {
+                    post = await postModel.findOne({_id: req.params.postId});
+                    const user = await userModel.findOne({_id: post.userId})
+                    return {
+                        ...post._doc,
+                        user: {
+                            username: user.username,
+                            avatar: user.avatar
+                        }
                     }
-                }
+                })
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }

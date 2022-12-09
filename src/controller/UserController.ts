@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import {ActivityEnum} from "../util/enum/ActivityEnum";
 import getOrSetRedisCache from "../util/getOrSetRedisCache";
 import {Ttl} from "../util/Ttl";
+import {redisClient} from "../index";
 
 const userModel = require('../models/user')
 const activityModel = require('../models/activity')
@@ -212,6 +213,7 @@ export class UserController {
                 createdAt: new Date(),
             })
             await activityRecord.save()
+            await redisClient.del(`staff_get_all_users`)
         } catch (e) {
             return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrCreate))
         }

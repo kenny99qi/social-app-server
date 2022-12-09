@@ -240,7 +240,7 @@ export class FollowController {
                         const users:any[] = []
                         const suggestion:any[] = []
                         const allUsers = await getOrSetRedisCache(`allUsers:${id}`, Ttl.OneDay ,async () => {
-                            return await userModel.find();
+                            return await userModel.find().limit(10);
                         })
                         await Promise.all(allUsers?.map(async (value: any) => {
                             const user = {
