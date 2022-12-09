@@ -5,26 +5,30 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import {ActivityEnum} from "../util/enum/ActivityEnum";
 import getOrSetRedisCache from "../util/getOrSetRedisCache";
+import {Ttl} from "../util/Ttl";
 
 const userModel = require('../models/user')
 const activityModel = require('../models/activity')
 
 require('dotenv').config()
 
-const ttl = 60 * 60 * 24
-
 export class UserController {
     static getAllUsers = async (req: CustomRequest, res: Response) => {
         let users: any[] = []
         if(req.userWithJwt?.isStaff) {
             try{
-                users = await userModel.find();
+                users = await getOrSetRedisCache(`staff_get_all_users`, Ttl.TenMinute, async () => {
+                        return await userModel.find()
+                    }
+                )
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
         } else{
             try{
-                const allUsers = await userModel.find();
+                const allUsers = await getOrSetRedisCache(`get_all_users_${req.userWithJwt?.id}`, Ttl.TenMinute, async () => {
+                    userModel.find();
+                })
                 await Promise.all(allUsers?.map(async (value: any) => {
                     const user = {
                         id: value._id,
@@ -41,10 +45,12 @@ export class UserController {
     }
     // login user
     static loginUser = async (req: Request, res: Response) => {
-        try{
-            const user = await userModel.findOne({
-                email: req.body.email,
-            });
+        try {
+            const user = await getOrSetRedisCache(`login_get_raw_info_${req.body.email}`, Ttl.OneHour, async () => {
+                return await userModel.findOne({
+                    email: req.body.email,
+                });
+            })
 
             if (user === null) {
                 return res.status(401).json({
@@ -67,10 +73,10 @@ export class UserController {
                 const id = user._id
                 // @ts-ignore
                 const accessToken = jwt.sign({email: req.body.email, isStaff: user.isStaff, id}, process.env.JWT_SECRET, {expiresIn: '1d'});
-                let lastLogin = await userModel.findOneAndUpdate({email:req.body.email},{
-                    lastLogin: new Date()
-                })
-                lastLogin = await userModel.findOne({email:req.body.email})
+                // let lastLogin = await userModel.findOneAndUpdate({email:req.body.email},{
+                //     lastLogin: new Date()
+                // })
+                // lastLogin = await userModel.findOne({email:req.body.email})
                 const activityRecord = await activityModel({
                     userId: id,
                     activities: ActivityEnum.Logged_In,
@@ -79,7 +85,6 @@ export class UserController {
                 await activityRecord.save()
                 return res.status(200).json({
                     accessToken: accessToken,
-                    lastLogin: lastLogin.lastLogin,
                     message: "Login successfully",
                 });
             }
@@ -242,7 +247,7 @@ export class UserController {
         let user: any
         if (req.userWithJwt) {
             try {
-                user = await getOrSetRedisCache(`current_user_info_${req.userWithJwt.id}`, ttl, async () => {
+                user = await getOrSetRedisCache(`current_user_info_${req.userWithJwt.id}`, Ttl.OneDay, async () => {
                     return await userModel.findOne({
                     _id: req?.userWithJwt?.id,
                 });
@@ -310,8 +315,10 @@ export class UserController {
         let user: any
         if(req.userWithJwt) {
             try {
-                user = await userModel.findOne({
-                    _id: req.userWithJwt.id,
+                user = await getOrSetRedisCache(`current_user_password_${req.userWithJwt.id}`, Ttl.TenMinute, async () => {
+                    userModel.findOne({
+                        _id: req.userWithJwt?.id,
+                    })
                 })
                 const isMatch = await bcrypt.compare(req.body.password, user.password)
                 if(!isMatch){
