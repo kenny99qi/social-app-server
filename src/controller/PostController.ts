@@ -18,22 +18,20 @@ export class PostController {
             try{
                 posts = await getOrSetRedisCache(`all_posts`, Ttl.OneMinute, async () => {
                     const rawPosts = await postModel.find({}).sort({createdAt: -1});
-                    await Promise.all(rawPosts.map(async (post: any) => {
-                        try{
-                            const user = await userModel.findOne({_id: post.userId})
-                            post = {
-                                ...post._doc,
-                                user: {
-                                    username: user.username,
-                                    avatar: user.avatar
-                                }
+                    const getUserInfo = async (rawPosts: any) => {
+                        return await Promise.all(rawPosts?.map(async (post: any) => {
+                            try {
+                                return await userModel.findOne({_id: post.userId})
+                            } catch (e) {
+                                console.log(e)
                             }
-                            posts.push(post)
-                        } catch (e) {
-                            console.log(e)
-                        }
+                        }))
+                    };
+                    const users:any = await getUserInfo(rawPosts)
+                    return rawPosts.map((post: any, i: any) => ({
+                        post,
+                        user: users[i]
                     }))
-                    return posts
                 })
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
@@ -49,7 +47,7 @@ export class PostController {
         let pageSizes = 10
         if(req.userWithJwt) {
             try{
-                posts = await getOrSetRedisCache(`all_posts:${req.params.pageNumber}`, 10, async () => {
+                posts = await getOrSetRedisCache(`all_posts:${req.params.pageNumber}`, Ttl.TenMinute, async () => {
                     let pageNumber = req?.params?.pageNumber ? parseInt(req.params.pageNumber as string) : 1
                     const rawPosts = await postModel.find({}).skip((pageNumber - 1) * pageSizes).limit(pageSizes).sort({'status.createdAt': -1});
                     const getUserInfo = async (rawPosts: any) => {
@@ -81,25 +79,15 @@ export class PostController {
         if(req.userWithJwt) {
             try{
                 posts = await getOrSetRedisCache(`user_posts:${req.params.userId}`, Ttl.HalfHour, async () => {
-                    const rawPosts = await postModel.find({userId: req.params.userId}).sort({createdAt: -1});
-                    const user = await getOrSetRedisCache(`user:${req.params.userId}`, Ttl.HalfHour, async () => {
+                    const rawPosts = await postModel.find({userId: req.params.userId}).sort({'status.createdAt': -1});
+                    const user = await getOrSetRedisCache(`user:${req.params.userId}`, Ttl.TenMinute, async () => {
                         return await userModel.findOne({_id: req.params.userId})
                     })
-                    await Promise.all(rawPosts.map(async (post: any) => {
-                        try{
-                            post = {
-                                ...post._doc,
-                                user: {
-                                    username: user.username,
-                                    avatar: user.avatar
-                                }
-                            }
-                            posts.push(post)
-                        } catch (e) {
-                            console.log(e)
-                        }
+
+                    return rawPosts.map((post: any, i: any) => ({
+                        post,
+                        user
                     }))
-                    return posts
                 })
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))

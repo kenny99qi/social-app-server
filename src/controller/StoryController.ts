@@ -18,22 +18,20 @@ export class StoryController {
             try{
                 stories = await getOrSetRedisCache(`all_stories`, Ttl.OneMinute, async () => {
                     const rawStories = await storyModel.find({}).sort({createdAt: -1});
-                    await Promise.all(rawStories.map(async (post: any) => {
-                        try{
-                            const user = await userModel.findOne({_id: post.userId})
-                            post = {
-                                ...post._doc,
-                                user: {
-                                    username: user.username,
-                                    avatar: user.avatar
-                                }
+                    const getUserInfo = async (rawStories: any) => {
+                        return await Promise.all(rawStories.map(async (post: any) => {
+                            try {
+                                return await userModel.findOne({_id: post.userId})
+                            } catch (e) {
+                                console.log(e)
                             }
-                            stories.push(post)
-                        } catch (e) {
-                            console.log(e)
-                        }
+                        }))
+                    };
+                    const users:any = await getUserInfo(rawStories)
+                    return rawStories.map((post: any, i: any) => ({
+                        post,
+                        user: users[i]
                     }))
-                    return stories
                 })
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
@@ -81,20 +79,13 @@ export class StoryController {
         if(req.userWithJwt) {
             try{
                 const rawStories = await storyModel.find({userId: req.params.userId}).sort({createdAt: -1});
-                await Promise.all(rawStories.map(async (story: any) => {
-                    try{
-                        const user = await userModel.findOne({_id: story.userId})
-                        story = {
-                            ...story._doc,
-                            user: {
-                                username: user.username,
-                                avatar: user.avatar
-                            }
-                        }
-                        stories.push(story)
-                    } catch (e) {
-                        console.log(e)
-                    }
+                const user = await getOrSetRedisCache(`user:${req.params.userId}`, Ttl.TenMinute, async () => {
+                    return await userModel.findOne({_id: req.params.userId})
+                })
+
+                return rawStories.map((post: any, i: any) => ({
+                    post,
+                    user
                 }))
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
