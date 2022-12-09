@@ -27,7 +27,7 @@ export class UserController {
         } else{
             try{
                 const allUsers = await getOrSetRedisCache(`get_all_users_${req.userWithJwt?.id}`, Ttl.TenMinute, async () => {
-                    userModel.find();
+                    return await userModel.find();
                 })
                 await Promise.all(allUsers?.map(async (value: any) => {
                     const user = {
@@ -316,7 +316,7 @@ export class UserController {
         if(req.userWithJwt) {
             try {
                 user = await getOrSetRedisCache(`current_user_password_${req.userWithJwt.id}`, Ttl.TenMinute, async () => {
-                    userModel.findOne({
+                    return await userModel.findOne({
                         _id: req.userWithJwt?.id,
                     })
                 })
