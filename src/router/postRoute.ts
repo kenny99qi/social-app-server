@@ -9,7 +9,7 @@ postRouter.get('/all', verifyUser, PostController.getAllPosts)
 
 postRouter.get('/all/:pageNumber', verifyUser, PostController.getAllPostsWithPage)
 
-postRouter.get('/:userId', verifyUser, PostController.getUserPosts)
+postRouter.get('/:userId/:pageNumber', verifyUser, PostController.getUserPosts)
 
 postRouter.get('/get/:postId', verifyUser, PostController.getOnePost)
 

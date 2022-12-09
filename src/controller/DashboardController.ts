@@ -107,7 +107,6 @@ export class DashboardController {
                 const oldTasks = await dashboardModel.findOne({userId: id});
                 let newTasks:any[] = []
                 await Promise.all(oldTasks.tasks.map(async (task: any) => {
-                    console.log(req.body.taskId, req.body.tasks)
                     if (task._id == req.body.taskId) {
                         task.task = req.body.task
                         task.dueDate = req.body.dueDate
@@ -117,7 +116,6 @@ export class DashboardController {
                     }
                     newTasks.push(task)
                 }))
-                console.log(newTasks)
                 tasks = await dashboardModel.findOneAndUpdate
                 ({userId: id}, {tasks: newTasks});
                 tasks = await dashboardModel.findOne({userId: id})

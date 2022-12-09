@@ -4,7 +4,7 @@ import {CustomRequest, JwtPayload} from "../middleware/auth/AuthMiddleware";
 import {ActivityEnum} from "../util/enum/ActivityEnum";
 import getOrSetRedisCache from "../util/getOrSetRedisCache";
 import {Ttl} from "../util/Ttl";
-import {redisClient} from "../index";
+
 const followModel = require('../models/follow')
 const userModel = require('../models/user')
 const activityModel = require('../models/activity')
@@ -60,8 +60,6 @@ export class FollowController {
                         createdAt: new Date(),
                     })
                     await activityRecord.save()
-                    await redisClient.del(`all_follow:${id}`)
-                    await redisClient.del(`suggestions:${id}`).catch((e) => console.log(e))
                 } catch (e) {
                     return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrUpdate))
                 }
@@ -175,8 +173,6 @@ export class FollowController {
                             await activityRecord.save()
                         }
                     }
-                    await redisClient.del(`all_follow:${id}`)
-                    await redisClient.del(`suggestions:${id}`).catch((e) => console.log(e))
                 } else {
                     return res.status(StatusCode.E400).json(new Error("User not found!", StatusCode.E400, Message.ErrCreate))
                 }
@@ -219,8 +215,6 @@ export class FollowController {
                     })
                     await dislike.save()
                 }
-                await redisClient.del(`all_follow:${id}`)
-                await redisClient.del(`suggestions:${id}`).catch((e) => console.log(e))
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrCreate))
             }
@@ -234,40 +228,10 @@ export class FollowController {
             const {id} = req.userWithJwt as JwtPayload
             try {
                     suggestions = await getOrSetRedisCache(`suggestions:${id}`, Ttl.OneDay, async () => {
-                        const rawFollowings = await getOrSetRedisCache(`rawFollowings:${id}`, Ttl.OneDay ,async () => {
-                            return await followModel.findOne({userId: id})
-                        })
-                        const users:any[] = []
-                        const suggestion:any[] = []
-                        const allUsers = await getOrSetRedisCache(`allUsers:${id}`, Ttl.OneDay ,async () => {
-                            return await userModel.find().limit(50);
-                        })
-                        await Promise.all(allUsers?.map(async (value: any) => {
-                            const user = {
-                                id: value._id,
-                                username: value.username,
-                                avatar: value.avatar,
-                            }
-                            users.push(user)
-                        }))
-                        if (!rawFollowings) {
-                            await Promise.all(users?.map(async (value: any) => {
-                                const userId = value.id.valueOf()
-                                if (userId !== id) {
-                                    suggestion.push(value)
-                                }
-                            }))
-                        } else {
-                            await Promise.all(users?.map(async (value: any) => {
-                                const userId = value.id.valueOf()
-                                const duplicate = rawFollowings.following.filter((value: any) => value === userId)
-                                const duplicate2 = rawFollowings.dislike.filter((value: any) => value === userId)
-                                if (duplicate.length === 0 && duplicate2.length === 0 && userId !== id) {
-                                    suggestion.push(value)
-                                }
-                            }))
-                        }
-                        return suggestion.slice(0, 6)
+                        const rawFollowings = await followModel.findOne({userId: id})
+                        const filters = [...rawFollowings.following, ...rawFollowings.dislike, id]
+                        const users = await userModel.find({_id: {$nin: filters}}).limit(6)
+                        return users.sort(() => Math.random() - 0.5)
                     })
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
