@@ -184,14 +184,11 @@ export class PostController {
     static getCommentsOfOnePost = async (req: CustomRequest, res: Response) => {
         let comments: any[] = []
         const postId = req.params.postId
-        console.log(postId)
         if (req.userWithJwt) {
             try {
                 comments = await getOrSetRedisCache(`comments:${postId}`, Ttl.TenMinute, async () => {
                     const rawPosts = await postModel.findById({_id: postId});
-                    console.log('11111111111111111',rawPosts)
                     const rawComments = rawPosts?.interaction.comments
-                    console.log('22222222222222222', rawComments)
                     const getUserInfo = async (rawPosts: any) => {
                         return await Promise.all(rawPosts?.map(async (post: any) => {
                             try {
@@ -202,7 +199,6 @@ export class PostController {
                         }))
                     };
                     const users:any = await getUserInfo(rawComments)
-                    console.log('333333333333333333', users)
                     return rawComments?.map((comment: any, i: any) => ({
                         comment,
                         user: users[i]
@@ -212,7 +208,7 @@ export class PostController {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
         }
-        return res.status(200).json(new Error(comments, StatusCode.E200, Message.OK));
+        return res.status(200).json(new Error(comments.reverse(), StatusCode.E200, Message.OK));
     }
 
     static deleteCommentPost = async (req: CustomRequest, res: Response) => {
