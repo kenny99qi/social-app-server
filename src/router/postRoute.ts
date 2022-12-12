@@ -21,9 +21,9 @@ postRouter.post('/like/:postId', verifyUser, PostController.likePost)
 
 postRouter.post('/dislike/:postId', verifyUser, PostController.dislikePost)
 
-postRouter.post('/comment/:postId', verifyUser, PostController.commentPost)
+postRouter.post('/comment', verifyUser, PostController.commentPost)
 
-postRouter.get('/comment/:postId', verifyUser, PostController.getCommentsOfPost)
+postRouter.post('/comment/:postId', verifyUser, PostController.getCommentsOfOnePost)
 
 postRouter.post('/deleteComment', verifyUser, PostController.deleteCommentPost)
 

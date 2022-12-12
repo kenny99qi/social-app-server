@@ -157,13 +157,13 @@ export class PostController {
         if(req.userWithJwt) {
             const {id} = req.userWithJwt as JwtPayload
             try{
-                post = await postModel.findOneAndUpdate({_id: req.params.postId}, {$push: {"interaction.comments": {
+                post = await postModel.findOneAndUpdate({_id: req.body.postId}, {$push: {"interaction.comments": {
                             userId: id,
                             text: req.body.text,
                             img: req.body.img,
                             createdAt: new Date()
                         }}});
-                post = await postModel.findOne({_id: req.params.postId});
+                post = await postModel.findOne({_id: req.body.postId});
                 const user = await userModel.findOne({_id: id})
                 const activityRecord = await activityModel({
                     userId: user._id,
@@ -171,7 +171,7 @@ export class PostController {
                     createdAt: new Date(),
                 })
                 await activityRecord.save()
-                await redisClient.del(`comments:${req.params.postId}`)
+                await redisClient.del(`comments:${req.body.postId}`)
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
             }
@@ -181,30 +181,32 @@ export class PostController {
         return res.status(200).json(new Error(post, StatusCode.E200, Message.OK));
     }
 
-    static getCommentsOfPost = async (req: CustomRequest, res: Response) => {
+    static getCommentsOfOnePost = async (req: CustomRequest, res: Response) => {
         let comments: any[] = []
+        const postId = req.params.postId
+        console.log(postId)
         if (req.userWithJwt) {
             try {
-                comments = await getOrSetRedisCache(`comments:${req.params.postId}`, Ttl.TenMinute, async () => {
-                    const rawComments = await postModel.findOne({_id: req.params.postId});
-                    await Promise.all(rawComments?.interaction.comments.map(async (comment: any) => {
-                        try {
-                            const user = await userModel.findOne({
-                                _id: comment.userId
-                            })
-                            comment = {
-                                ...comment._doc,
-                                user: {
-                                    username: user.username,
-                                    avatar: user.avatar
-                                }
+                comments = await getOrSetRedisCache(`comments:${postId}`, Ttl.TenMinute, async () => {
+                    const rawPosts = await postModel.findById({_id: postId});
+                    console.log('11111111111111111',rawPosts)
+                    const rawComments = rawPosts?.interaction.comments
+                    console.log('22222222222222222', rawComments)
+                    const getUserInfo = async (rawPosts: any) => {
+                        return await Promise.all(rawPosts?.map(async (post: any) => {
+                            try {
+                                return await userModel.findOne({_id: post.userId})
+                            } catch (e) {
+                                console.log(e)
                             }
-                            comments.push(comment)
-                        } catch (e) {
-                            console.log(e)
-                        }
+                        }))
+                    };
+                    const users:any = await getUserInfo(rawComments)
+                    console.log('333333333333333333', users)
+                    return rawComments?.map((comment: any, i: any) => ({
+                        comment,
+                        user: users[i]
                     }))
-                    return comments
                 })
             } catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrFind))
@@ -294,6 +296,7 @@ export class PostController {
                     createdAt: new Date(),
                 })
                 await activityRecord.save()
+                await redisClient.publish('new_posts', JSON.stringify(activityRecord));
             }
             catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrCreate))
