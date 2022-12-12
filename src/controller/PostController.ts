@@ -4,10 +4,12 @@ import {CustomRequest, JwtPayload} from "../middleware/auth/AuthMiddleware";
 import {ActivityEnum} from "../util/enum/ActivityEnum";
 import getOrSetRedisCache from "../util/getOrSetRedisCache";
 import {Ttl} from "../util/Ttl";
-import {redisClient} from "../index";
+import {io, redisClient} from "../index"
+import {Server} from "socket.io";
 const postModel = require('../models/post')
 const userModel = require('../models/user')
 const activityModel = require('../models/activity')
+
 
 require('dotenv').config()
 
@@ -47,7 +49,7 @@ export class PostController {
         let pageSizes = 10
         if(req.userWithJwt) {
             try{
-                posts = await getOrSetRedisCache(`all_posts:${req.params.pageNumber}`, Ttl.TenMinute, async () => {
+                posts = await getOrSetRedisCache(`all_posts:${req.params.pageNumber}`, 10, async () => {
                     let pageNumber = req?.params?.pageNumber ? parseInt(req.params.pageNumber as string) : 1
                     const rawPosts = await postModel.find({}).skip((pageNumber - 1) * pageSizes).limit(pageSizes).sort({'status.createdAt': -1});
                     const getUserInfo = async (rawPosts: any) => {
@@ -284,7 +286,17 @@ export class PostController {
                         createdAt: new Date(),
                     }
                 })
-                await res.save()
+                await res.save().then(async (post: any) => {
+                    const user = await userModel.findOne({_id: post.userId})
+                    post = {
+                        post,
+                        user: {
+                            username: user.username,
+                            avatar: user.avatar
+                        }
+                    }
+                    io.emit('new_post', post);
+                })
                 const user = await userModel.findOne({_id: id})
                 const activityRecord = await activityModel({
                     userId: user._id,
@@ -292,7 +304,9 @@ export class PostController {
                     createdAt: new Date(),
                 })
                 await activityRecord.save()
-                await redisClient.publish('new_posts', JSON.stringify(activityRecord));
+                await redisClient.publish('posts', JSON.stringify(activityRecord)).then(() => {
+                    console.log('published')});
+
             }
             catch (e) {
                 return res.status(StatusCode.E500).json(new Error(e, StatusCode.E500, Message.ErrCreate))

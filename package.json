@@ -22,7 +22,8 @@
     "mongoose": "^6.7.2",
     "mongoose-unique-validator": "^3.1.0",
     "nodemon": "^2.0.20",
-    "redis": "^4.5.1"
+    "redis": "^4.5.1",
+    "socket.io": "^4.5.4"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.0",

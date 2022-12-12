@@ -5,6 +5,8 @@ import cors from 'cors'
 import express, {Application, Request, Response} from "express";
 import { connectToServer } from "./data-source";
 import {createClient} from 'redis'
+import { Server } from "socket.io";
+const http = require("http");
 
 dotenv.config()
 
@@ -14,6 +16,15 @@ export const redisClient = createClient({
         port: parseInt(process.env.REDIS_PORT as string)
     },
     password: process.env.REDIS_PASSWORD
+});
+
+
+// const httpServer = http.createServer();
+export const io = new Server(8001, {
+    cors: {
+        origin: [process.env.CLIENT_URL as string],
+        credentials: true
+    }
 });
 
 const startServer = async () => {
@@ -30,6 +41,10 @@ const startServer = async () => {
 
     redisClient.on("error", (error) => console.error(`Error : ${error}`));
     await redisClient.connect().then(() => console.log('Redis connected'))
+
+    io.on('connection', (socket) => {
+        console.log('A user connected');
+    });
 
     // error handler
     app.use((req: Request, res: Response) => {
