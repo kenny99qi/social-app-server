@@ -1,5 +1,7 @@
 import {Request, Response} from 'express'
 import {contactEmail} from "../index";
+import {STATUS_CODES} from "http";
+import Error, {Message, StatusCode} from "../util/Error";
 
 require('dotenv').config()
 
@@ -23,14 +25,13 @@ export class EmailController {
            <p>Phone: ${phone}</p>
            <p>Message: ${message}</p>`,
             };
-            await         contactEmail.sendMail(mail, (error) => {
+            await contactEmail.sendMail(mail, async (error) => {
                 if (error) {
-                    res.json(error);
+                    return res.status(StatusCode.E500).json(new Error('Server error', StatusCode.E500, Message.EmailError))
                 } else {
-                    res.json({ code: 200, status: "Message Sent" });
+                    return res.status(200).json(new Error("Email sent", StatusCode.E200, Message.OK));
                 }
             });
-            res.status(200).json({message: 'Email sent'})
         } catch (e) {
             console.log(e)
             res.status(500).json({message: 'Server error'})
