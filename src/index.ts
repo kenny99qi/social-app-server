@@ -45,7 +45,11 @@ const startServer = async () => {
 
     app.use(cors({methods: ['GET', 'POST', 'PUT', 'DELETE'],
         credentials: true,
-        origin: [process.env.CLIENT_URL as string, process.env.CLIENT_URL_PORTFOLIO as string]
+        origin: [
+            process.env.CLIENT_URL as string,
+            process.env.CLIENT_URL_PORTFOLIO as string,
+            process.env.CLIENT_URL_DEV as string,
+        ]
     }))
 
     app.use(routers)
