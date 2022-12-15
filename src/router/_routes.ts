@@ -6,6 +6,7 @@ import postRouter from "./postRoute";
 import activityRouter from "./activityRoute";
 import dashboardRouter from "./dashboardRoute";
 import storyRouter from "./storyRoute";
+import emailRoute from "./emailRoute";
 
 const routers = Router();
 
@@ -16,5 +17,6 @@ routers.use("/post", postRouter);
 routers.use("/activity", activityRouter);
 routers.use("/dash", dashboardRouter);
 routers.use("/story", storyRouter);
+routers.use("/email", emailRoute);
 
 export default routers;

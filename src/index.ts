@@ -7,6 +7,7 @@ import { connectToServer } from "./data-source";
 import {createClient} from 'redis'
 import { Server } from "socket.io";
 const http = require("http");
+import nodemailer from "nodemailer";
 
 dotenv.config()
 
@@ -27,6 +28,15 @@ export const io = new Server(8001, {
     }
 });
 
+export const contactEmail = nodemailer.createTransport({
+    host: process.env.REACT_APP_EMAIL_HOST as string,
+    port: Number(process.env.REACT_APP_EMAIL_PORT),
+    auth: {
+        user: process.env.REACT_APP_EMAIL_USER as string,
+        pass: process.env.REACT_APP_EMAIL_PASS as string,
+    }
+});
+
 const startServer = async () => {
     const app: Application = express()
 
@@ -44,6 +54,14 @@ const startServer = async () => {
 
     io.on('connection', (socket) => {
         console.log('A user connected');
+    });
+
+    contactEmail.verify((error) => {
+        if (error) {
+            console.log(error);
+        } else {
+            console.log("Ready to Send");
+        }
     });
 
     // error handler
