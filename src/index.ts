@@ -42,9 +42,10 @@ const startServer = async () => {
 
     // middleware
     app.use(bodyParser.json({limit: '50mb'}));
+
     app.use(cors({methods: ['GET', 'POST', 'PUT', 'DELETE'],
         credentials: true,
-        origin: process.env.CLIENT_URL as string
+        origin: [process.env.CLIENT_URL as string, process.env.CLIENT_URL_PORTFOLIO as string]
     }))
 
     app.use(routers)
