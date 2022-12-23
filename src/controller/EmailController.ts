@@ -10,6 +10,8 @@ export class EmailController {
         res.status(200).send("Hello World");
     }
 
+
+
     static sendContactEmail = async (req: Request, res: Response) => {
         try {
             const name = req?.body?.firstName + req?.body?.lastName;
