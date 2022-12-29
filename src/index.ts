@@ -49,6 +49,7 @@ const startServer = async () => {
             process.env.CLIENT_URL as string,
             process.env.CLIENT_URL_PORTFOLIO as string,
             process.env.CLIENT_URL_DEV as string,
+            process.env.CLIENT_URL_OPENAI as string
         ]
     }))
 
