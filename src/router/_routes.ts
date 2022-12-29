@@ -7,6 +7,7 @@ import activityRouter from "./activityRoute";
 import dashboardRouter from "./dashboardRoute";
 import storyRouter from "./storyRoute";
 import emailRoute from "./emailRoute";
+import openaiRoute from "./openaiRoute";
 
 const routers = Router();
 
@@ -18,5 +19,6 @@ routers.use("/activity", activityRouter);
 routers.use("/dash", dashboardRouter);
 routers.use("/story", storyRouter);
 routers.use("/email", emailRoute);
+routers.use("/openai", openaiRoute);
 
 export default routers;
