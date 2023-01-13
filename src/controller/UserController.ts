@@ -47,18 +47,19 @@ export class UserController {
     // login user
     static loginUser = async (req: Request, res: Response) => {
         try {
-            const user = await getOrSetRedisCache(`login_get_raw_info_${req.body.email}`, Ttl.OneHour, async () => {
-                return await userModel.findOne({
+            const user = await userModel.findOne({
                     email: req.body.email,
                 });
-            })
 
             if (user === null) {
+                console.log("User not found");
                 return res.status(401).json({
                     accessToken: null,
                     message: "Email or password is incorrect",
                 });
             }
+
+            console.log("User found");
 
             const passwordValid = await bcrypt.compare(
                 req.body.password,
@@ -66,6 +67,7 @@ export class UserController {
             );
 
             if (!passwordValid) {
+                console.log("Password is incorrect");
                 return res.status(401).json({
                     accessToken: null,
                     message: "Email or password is incorrect",
