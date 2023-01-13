@@ -1,3 +1,5 @@
+import {ServerApiVersion} from "mongodb";
+
 const mongoose = require("mongoose");
 
 import dotenv from "dotenv";
@@ -7,12 +9,17 @@ let db: any;
 
 export const connectToServer = async () => {
     try{
-        await mongoose.connect(`${process.env.MONGODB_BASE_URL}${process.env.MONGODB_DATABASE_NAME}`, {
-            authSource: "admin",
-            user: process.env.MONGODB_USERNAME,
-            pass: process.env.MONGODB_PASSWORD,
+        // await mongoose.connect(`${process.env.MONGODB_BASE_URL}${process.env.MONGODB_DATABASE_NAME}`, {
+        //     authSource: "admin",
+        //     user: process.env.MONGODB_USERNAME,
+        //     pass: process.env.MONGODB_PASSWORD,
+        //     useNewUrlParser: true,
+        //     useUnifiedTopology: true,
+        // });
+        await mongoose.connect(`${process.env.MONGODB_ATLAS}`, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
+            serverApi: ServerApiVersion.v1
         });
         db = mongoose.connection;
         db.on("error", console.error.bind(console, "connection error: "));
